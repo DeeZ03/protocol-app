@@ -9,6 +9,7 @@ on:
       - 'src/**'
       - 'package.json'
       - 'app.json'
+      - 'file_000000000bcc820cbdbc09c76f6eb270.png'
       - 'tsconfig.json'
       - '.github/workflows/android-apk.yml'
 
@@ -54,6 +55,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Prepare Protocol branding assets
+        run: |
+          mkdir -p assets
+          cp file_000000000bcc820cbdbc09c76f6eb270.png assets/icon.png
 
       - name: Generate Android native project
         run: npx expo prebuild --platform android --non-interactive --no-install
