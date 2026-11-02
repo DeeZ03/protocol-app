@@ -1,10 +1,16 @@
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 
-type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string };
+type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string };
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const validDate = (value: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(value + 'T12:00:00Z');
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
 const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 
 export default function Protocols() {
@@ -16,6 +22,9 @@ export default function Protocols() {
   const [compound, setCompound] = useState('');
   const [schedule, setSchedule] = useState('');
   const [saving, setSaving] = useState(false);
+  const [days, setDays] = useState<number[]>([]);
+  const [time, setTime] = useState('');
+  const [startDate, setStartDate] = useState('');
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -33,6 +42,9 @@ export default function Protocols() {
     setName(entry.name);
     setCompound(entry.compound);
     setSchedule(entry.schedule);
+    setDays(entry.days ?? []);
+    setTime(entry.time ?? '');
+    setStartDate(entry.startDate ?? '');
     setEditing(true);
   };
 
@@ -42,11 +54,22 @@ export default function Protocols() {
     setName('');
     setCompound('');
     setSchedule('');
+    setDays([]);
+    setTime('');
+    setStartDate('');
   };
 
   const save = async () => {
     if (!name.trim() || !compound.trim() || !schedule.trim()) {
       Alert.alert('Missing information', 'Enter a name, compound and schedule to continue.');
+      return;
+    }
+    if (days.length > 0 && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time.trim())) {
+      Alert.alert('Check time', 'Enter a time in 24-hour format, for example 09:30.');
+      return;
+    }
+    if (startDate.trim() && !validDate(startDate.trim())) {
+      Alert.alert('Check start date', 'Enter a valid date as YYYY-MM-DD, for example 2026-11-02.');
       return;
     }
     if (saving) return;
@@ -62,6 +85,9 @@ export default function Protocols() {
       name: name.trim(),
       compound: compound.trim(),
       schedule: schedule.trim(),
+      days: days.slice().sort((a, b) => a - b),
+      time: days.length ? time.trim() : '',
+      startDate: startDate.trim(),
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     const next = existing ? items.map(item => item.id === existing.id ? entry : item) : [entry, ...items];
@@ -98,7 +124,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setEditing(true); }}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -127,7 +153,9 @@ export default function Protocols() {
               </View>
             </View>
             <Text style={styles.detail}>Compound: {item.compound}</Text>
-            <Text style={styles.detail}>Schedule: {item.schedule}</Text>
+            <Text style={styles.detail}>Notes: {item.schedule}</Text>
+            {item.days && item.days.length > 0 && <Text style={styles.detail}>Days: {item.days.map(day => DAYS[day]).join(', ')} at {item.time}</Text>}
+            {!!item.startDate && <Text style={styles.detail}>Start date: {item.startDate}</Text>}
           </View>
         )}
         ListFooterComponent={<Text style={styles.disclaimer}>Prototype for testing only. Do not enter sensitive personal health information. No medical advice or dosing recommendations are provided. Records are stored on this device and are not synced or backed up.</Text>}
@@ -138,16 +166,33 @@ export default function Protocols() {
             <Text style={styles.heading}>{editingId ? 'Edit protocol' : 'Add protocol'}</Text>
             <Pressable accessibilityRole="button" onPress={close}><Text style={styles.cancel}>Cancel</Text></Pressable>
           </View>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.formContent}>
           <Text style={styles.label}>Protocol name</Text>
           <TextInput style={styles.input} placeholder="e.g. My routine" value={name} onChangeText={setName} maxLength={80} />
           <Text style={styles.label}>Compound name</Text>
           <TextInput style={styles.input} placeholder="Enter a name" value={compound} onChangeText={setCompound} maxLength={100} />
-          <Text style={styles.label}>Schedule (your own notes)</Text>
+          <Text style={styles.label}>Scheduled days (optional)</Text>
+          <View style={styles.dayRow}>
+            {DAYS.map((day, index) => {
+              const selected = days.includes(index);
+              return (
+                <Pressable key={day} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} style={[styles.dayButton, selected && styles.daySelected]} onPress={() => setDays(current => current.includes(index) ? current.filter(d => d !== index) : [...current, index])}>
+                  <Text style={[styles.dayText, selected && styles.daySelectedText]}>{day}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.label}>Time (24-hour format)</Text>
+          <TextInput style={styles.input} placeholder="e.g. 09:30" value={time} onChangeText={setTime} keyboardType="numbers-and-punctuation" maxLength={5} />
+          <Text style={styles.label}>Start date (optional)</Text>
+          <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" maxLength={10} />
+          <Text style={styles.label}>Schedule notes</Text>
           <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
           <Pressable accessibilityRole="button" disabled={saving} style={[styles.saveButton, saving && styles.disabled]} onPress={save}>
             <Text style={styles.saveText}>{saving ? 'Saving...' : editingId ? 'Save changes' : 'Save protocol'}</Text>
           </Pressable>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -174,6 +219,12 @@ const styles = StyleSheet.create({
   delete: { color: '#B42318', fontWeight: '600' },
   disclaimer: { fontSize: 12, color: theme.muted, lineHeight: 19, marginTop: 16 },
   modal: { flex: 1, backgroundColor: theme.background, paddingHorizontal: 22, paddingTop: 28 },
+  formContent: { paddingBottom: 40 },
+  dayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 20 },
+  dayButton: { borderWidth: 1, borderColor: theme.border, backgroundColor: theme.white, borderRadius: 9, paddingVertical: 10, paddingHorizontal: 9 },
+  daySelected: { backgroundColor: theme.navy, borderColor: theme.navy },
+  dayText: { color: theme.navy, fontSize: 13, fontWeight: '700' },
+  daySelectedText: { color: theme.white },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 },
   cancel: { color: theme.teal, fontSize: 16, fontWeight: '700' },
   label: { color: theme.navy, fontWeight: '700', fontSize: 15, marginBottom: 8 },
