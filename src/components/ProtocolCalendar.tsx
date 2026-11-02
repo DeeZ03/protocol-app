@@ -21,6 +21,16 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
   const [view, setView] = useState<'month' | 'day' | null>(null);
   const slide = useRef(new Animated.Value(0)).current;
   const timelineRef = useRef<ScrollView>(null);
+  const monthSlide = useRef(new Animated.Value(0)).current;
+  const monthGesture = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
+    onPanResponderMove: (_, g) => monthSlide.setValue(g.dx * 0.65),
+    onPanResponderRelease: (_, g) => {
+      if (Math.abs(g.dx) > 45) setMonth(m => monthMove(m, g.dx < 0 ? 1 : -1));
+      Animated.spring(monthSlide, { toValue: 0, useNativeDriver: true, tension: 95, friction: 12 }).start();
+    },
+    onPanResponderTerminate: () => Animated.spring(monthSlide, { toValue: 0, useNativeDriver: true }).start(),
+  })).current;
   const gesture = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
     onPanResponderMove: (_, g) => slide.setValue(g.dx * 0.65),
@@ -93,7 +103,8 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
             <Pressable onPress={() => setView(null)} accessibilityRole="button"><Text style={styles.link}>Done</Text></Pressable>
           </View>
           {view === 'month' ? (
-            <View {...swipe('month')} style={styles.monthWrap}>
+            <View {...monthGesture.panHandlers} style={styles.monthWrap}>
+              <Animated.View style={{ transform: [{ translateX: monthSlide }] }}>
               <Text style={styles.monthHeading}>{month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</Text>
               <Text style={styles.caption}>Swipe left or right to change month</Text>
               <View style={styles.monthGrid}>
@@ -109,6 +120,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
                   </Pressable>;
                 })}
               </View>
+              </Animated.View>
             </View>
           ) : (
             <ScrollView ref={timelineRef} contentContainerStyle={styles.timeline} onLayout={() => { const first = dayEntries[0]; if (first?.time) timelineRef.current?.scrollTo({ y: Math.max(0, Number(first.time.slice(0, 2)) * 68 - 120), animated: false }); }}>
