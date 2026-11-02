@@ -45,16 +45,26 @@ jobs:
       - name: Generate Android native project
         run: npx expo prebuild --platform android --non-interactive --no-install
 
-      - name: Build test APK
+      - name: Configure local release signing for test APK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle')
+          s = p.read_text()
+          s = s.replace('signingConfig signingConfigs.release', 'signingConfig signingConfigs.debug')
+          p.write_text(s)
+          PY
+
+      - name: Build standalone APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: protocol-android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: protocol-android-standalone-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
