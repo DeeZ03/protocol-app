@@ -63,7 +63,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
           );
         })}
       </View>
-      <Text style={styles.caption}>Tap any day for its 24-hour schedule. Dots indicate scheduled activities.</Text>
+      <Text style={styles.caption}>Tap any day for its 24-hour schedule. Blue: scheduled · Green: completed · Red: past not recorded · Hollow: empty.</Text>
       <Modal visible={view !== null} animationType="slide" onRequestClose={() => setView(null)}>
         <View style={styles.modal}>
           <View style={styles.modalTop}>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   weekLabel: { fontSize: 11, color: theme.slate },
   dayNumber: { fontSize: 17, color: theme.navy, fontWeight: '700', marginTop: 7 },
   dot: { width: 12, height: 12, borderRadius: 6, marginTop: 8, borderWidth: 1, borderColor: '#FFFFFF', elevation: 2 },
-  noDot: { backgroundColor: 'transparent' },
+  noDot: { backgroundColor: 'transparent', borderColor: '#9AAABD', borderWidth: 1.5, elevation: 0 },
   modal: { flex: 1, backgroundColor: theme.background, paddingTop: 42, paddingHorizontal: 18 },
   modalTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   monthWrap: { flex: 1 },
