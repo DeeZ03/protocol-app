@@ -11,6 +11,7 @@ export default function Protocols() {
   const [items, setItems] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [compound, setCompound] = useState('');
   const [schedule, setSchedule] = useState('');
@@ -27,8 +28,17 @@ export default function Protocols() {
     return () => { active = false; };
   }, []));
 
+  const openEdit = (entry: Protocol) => {
+    setEditingId(entry.id);
+    setName(entry.name);
+    setCompound(entry.compound);
+    setSchedule(entry.schedule);
+    setEditing(true);
+  };
+
   const close = () => {
     setEditing(false);
+    setEditingId(null);
     setName('');
     setCompound('');
     setSchedule('');
@@ -41,14 +51,20 @@ export default function Protocols() {
     }
     if (saving) return;
     setSaving(true);
+    const existing = editingId ? items.find(item => item.id === editingId) : undefined;
+    if (editingId && !existing) {
+      Alert.alert('Not found', 'This protocol is no longer available.');
+      setSaving(false);
+      return;
+    }
     const entry: Protocol = {
-      id: Date.now().toString() + '-' + Math.random().toString(36).slice(2),
+      id: existing?.id ?? (Date.now().toString() + '-' + Math.random().toString(36).slice(2)),
       name: name.trim(),
       compound: compound.trim(),
       schedule: schedule.trim(),
-      createdAt: new Date().toISOString(),
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
-    const next = [entry, ...items];
+    const next = existing ? items.map(item => item.id === existing.id ? entry : item) : [entry, ...items];
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setItems(next);
@@ -82,7 +98,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => setEditing(true)}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -101,9 +117,14 @@ export default function Protocols() {
           <View style={styles.card}>
             <View style={styles.cardTop}>
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <Pressable accessibilityRole="button" onPress={() => remove(item)} hitSlop={12}>
-                <Text style={styles.delete}>Delete</Text>
-              </Pressable>
+              <View style={styles.actions}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${item.name}`} onPress={() => openEdit(item)} hitSlop={10}>
+                  <Text style={styles.edit}>Edit</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${item.name}`} onPress={() => remove(item)} hitSlop={10}>
+                  <Text style={styles.delete}>Delete</Text>
+                </Pressable>
+              </View>
             </View>
             <Text style={styles.detail}>Compound: {item.compound}</Text>
             <Text style={styles.detail}>Schedule: {item.schedule}</Text>
@@ -114,7 +135,7 @@ export default function Protocols() {
       <Modal visible={editing} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
         <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalHeader}>
-            <Text style={styles.heading}>Add protocol</Text>
+            <Text style={styles.heading}>{editingId ? 'Edit protocol' : 'Add protocol'}</Text>
             <Pressable accessibilityRole="button" onPress={close}><Text style={styles.cancel}>Cancel</Text></Pressable>
           </View>
           <Text style={styles.label}>Protocol name</Text>
@@ -125,7 +146,7 @@ export default function Protocols() {
           <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
           <Pressable accessibilityRole="button" disabled={saving} style={[styles.saveButton, saving && styles.disabled]} onPress={save}>
-            <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save protocol'}</Text>
+            <Text style={styles.saveText}>{saving ? 'Saving...' : editingId ? 'Save changes' : 'Save protocol'}</Text>
           </Pressable>
         </KeyboardAvoidingView>
       </Modal>
@@ -148,6 +169,8 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 9 },
   cardTitle: { color: theme.navy, fontWeight: '700', fontSize: 18, flexShrink: 1 },
   detail: { color: theme.slate, fontSize: 14, lineHeight: 22, marginTop: 3 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  edit: { color: theme.teal, fontWeight: '700' },
   delete: { color: '#B42318', fontWeight: '600' },
   disclaimer: { fontSize: 12, color: theme.muted, lineHeight: 19, marginTop: 16 },
   modal: { flex: 1, backgroundColor: theme.background, paddingHorizontal: 22, paddingTop: 28 },
