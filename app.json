@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Protocol",
+    "slug": "protocol",
+    "scheme": "protocol",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.protocolapp.mobile"
+    },
+    "ios": {
+      "bundleIdentifier": "com.protocolapp.mobile"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
