@@ -3,6 +3,7 @@ import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Styl
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
+import { syncReminders } from '../../src/reminders';
 
 type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -94,6 +95,7 @@ export default function Protocols() {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setItems(next);
+      await syncReminders().catch(() => {});
       close();
     } catch {
       Alert.alert('Not saved', 'Something went wrong. Please try again.');
@@ -110,6 +112,7 @@ export default function Protocols() {
         try {
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
           setItems(next);
+          await syncReminders().catch(() => {});
         } catch {
           Alert.alert('Unable to delete', 'Please try again.');
         }
