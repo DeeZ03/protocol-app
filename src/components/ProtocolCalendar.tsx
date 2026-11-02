@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, Animated, PanResponder } from 'react-native';
 import { theme } from '../theme';
 
 type Protocol = { id: string; name: string; compound: string; days?: number[]; time?: string; startDate?: string };
@@ -19,6 +19,19 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12));
   const [selected, setSelected] = useState(() => new Date());
   const [view, setView] = useState<'month' | 'day' | null>(null);
+  const slide = useRef(new Animated.Value(0)).current;
+  const timelineRef = useRef<ScrollView>(null);
+  const gesture = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
+    onPanResponderMove: (_, g) => slide.setValue(g.dx * 0.65),
+    onPanResponderRelease: (_, g) => {
+      if (Math.abs(g.dx) > 45) {
+        setWeek(w => move(w, g.dx < 0 ? 7 : -7));
+      }
+      Animated.spring(slide, { toValue: 0, useNativeDriver: true, tension: 95, friction: 12 }).start();
+    },
+    onPanResponderTerminate: () => Animated.spring(slide, { toValue: 0, useNativeDriver: true }).start(),
+  })).current;
   const touch = useRef<{ x: number; y: number } | null>(null);
   const swipe = (direction: 'week' | 'month') => ({
     onTouchStart: (event: any) => { touch.current = { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY }; },
@@ -49,7 +62,8 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
         </Pressable>
       </View>
       <Text style={styles.caption}>{week.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} · Swipe to change week</Text>
-      <View {...swipe('week')} style={styles.week}>
+      <View {...gesture.panHandlers} style={styles.swipeArea}>
+      <Animated.View style={[styles.week, { transform: [{ translateX: slide }] }]}>
         {weeks.map(date => {
           const count = protocols.filter(p => scheduled(p, date)).length;
           const done = protocols.filter(p => scheduled(p, date) && hasCompletion(p, date)).length;
@@ -62,6 +76,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
             </Pressable>
           );
         })}
+      </Animated.View>
       </View>
       <Text style={styles.caption}>Tap any day for its 24-hour schedule. Blue: scheduled · Green: completed · Red: past not recorded · Hollow: empty.</Text>
       <Modal visible={view !== null} animationType="slide" onRequestClose={() => setView(null)}>
@@ -119,6 +134,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '800', color: theme.navy },
   link: { color: theme.teal, fontWeight: '700', fontSize: 14 },
   caption: { color: theme.muted, fontSize: 12, lineHeight: 19, marginTop: 9 },
+  swipeArea: { paddingVertical: 16, minHeight: 130 },
   week: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   day: { alignItems: 'center', borderRadius: 12, paddingVertical: 11, flex: 1, marginHorizontal: 2 },
   today: { backgroundColor: '#E2F4F4' },
