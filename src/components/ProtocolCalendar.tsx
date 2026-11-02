@@ -27,7 +27,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
       const dx = event.nativeEvent.pageX - touch.current.x;
       const dy = event.nativeEvent.pageY - touch.current.y;
       touch.current = null;
-      if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+      if (Math.abs(dx) < 24 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
       const delta = dx < 0 ? 1 : -1;
       if (direction === 'week') setWeek(w => move(w, delta * 7));
       else setMonth(m => monthMove(m, delta));
