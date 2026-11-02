@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-nati
 import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
+import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
 
 type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string };
 type Completion = { protocolId: string; date: string; completedAt: string; name: string; time: string };
@@ -81,6 +82,9 @@ export default function Dashboard() {
       <Text style={styles.eyebrow}>PROTOCOL / OVERVIEW</Text>
       <Text style={styles.heading}>Your day, organised.</Text>
       <Text style={styles.subtitle}>A clear space for tracking your health routines.</Text>
+      <View style={styles.card}>
+        <ProtocolCalendar protocols={protocols} completions={completions} />
+      </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Scheduled today</Text>
         <Text style={styles.muted}>{today.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
