@@ -7,13 +7,26 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.protocolapp.mobile"
+      "package": "com.protocolapp.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#000000"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.protocolapp.mobile"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -22,6 +35,7 @@
       "bundler": "metro",
       "output": "single",
       "name": "Protocol Preview"
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
