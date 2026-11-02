@@ -47,6 +47,12 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
     },
   });
   const openDay = (date: Date) => { setSelected(date); setView('day'); };
+  const statusColor = (p: Protocol, date: Date) => {
+    if (hasCompletion(p, date)) return '#00C853';
+    const now = new Date();
+    if (key(date) < key(now) || (key(date) === key(now) && (p.time ?? '') < [String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0')].join(':'))) return '#FF3040';
+    return '#087CFF';
+  };
   const dayEntries = protocols.filter(p => scheduled(p, selected)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   const firstOffset = (month.getDay() + 6) % 7;
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
@@ -105,17 +111,17 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
               </View>
             </View>
           ) : (
-            <ScrollView contentContainerStyle={styles.timeline}>
+            <ScrollView ref={timelineRef} contentContainerStyle={styles.timeline} onLayout={() => { const first = dayEntries[0]; if (first?.time) timelineRef.current?.scrollTo({ y: Math.max(0, Number(first.time.slice(0, 2)) * 68 - 120), animated: false }); }}>
               <Text style={styles.monthHeading}>{selected.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
-              <Text style={styles.caption}>{dayEntries.length} scheduled {dayEntries.length === 1 ? 'activity' : 'activities'} · Scroll through 24 hours</Text>
+              <Text style={styles.caption}>{dayEntries.filter(p => hasCompletion(p, selected)).length} of {dayEntries.length} completed · Scroll through 24 hours</Text>
               {Array.from({ length: 24 }, (_, hour) => {
                 const entries = dayEntries.filter(p => Number(p.time?.slice(0, 2)) === hour);
                 return <View key={hour} style={styles.hourRow}>
                   <Text style={styles.hourLabel}>{String(hour).padStart(2, '0')}:00</Text>
                   <View style={styles.hourContent}>
-                    {entries.map(p => <View key={p.id} style={styles.entry}>
+                    {entries.map(p => <View key={p.id} style={[styles.entry, { borderColor: statusColor(p, selected) }]}>
                       <Text style={styles.entryTitle}>{p.time} · {p.name}</Text>
-                      <Text style={styles.caption}>{p.compound} · {hasCompletion(p, selected) ? 'Marked completed' : 'Scheduled'}</Text>
+                      <Text style={styles.caption}>{p.compound} · {hasCompletion(p, selected) ? 'Marked completed' : statusColor(p, selected) === '#FF3040' ? 'Not recorded' : 'Scheduled'}</Text>
                     </View>)}
                   </View>
                 </View>;
