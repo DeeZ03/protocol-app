@@ -41,7 +41,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Export browser preview
-        run: npx expo export --platform web --output-dir dist --base-url /protocol-app
+        run: EXPO_BASE_URL=/protocol-app npx expo export --platform web --output-dir dist
 
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v5
