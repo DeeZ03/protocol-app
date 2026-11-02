@@ -58,7 +58,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
             <Pressable key={key(date)} accessibilityRole="button" accessibilityLabel={'View ' + date.toDateString()} onPress={() => openDay(date)} style={[styles.day, isToday && styles.today]}>
               <Text style={[styles.weekLabel, isToday && styles.todayText]}>{date.toLocaleDateString('en-GB', { weekday: 'short' })}</Text>
               <Text style={[styles.dayNumber, isToday && styles.todayText]}>{date.getDate()}</Text>
-              <View style={[styles.dot, count ? { backgroundColor: done === count ? '#23856D' : theme.teal } : styles.noDot]} />
+              <View style={[styles.dot, count ? { backgroundColor: done === count ? '#00C853' : key(date) < key(new Date()) ? '#FF3040' : '#087CFF' } : styles.noDot]} />
             </Pressable>
           );
         })}
@@ -84,7 +84,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
                   const done = protocols.filter(p => scheduled(p, date) && hasCompletion(p, date)).length;
                   return <Pressable key={i} style={[styles.monthCell, key(date) === key(new Date()) && styles.today]} onPress={() => openDay(date)} accessibilityRole="button" accessibilityLabel={'View ' + date.toDateString()}>
                     <Text style={styles.monthNumber}>{i + 1}</Text>
-                    <View style={[styles.dot, count ? { backgroundColor: done === count ? '#23856D' : theme.teal } : styles.noDot]} />
+                    <View style={[styles.dot, count ? { backgroundColor: done === count ? '#00C853' : key(date) < key(new Date()) ? '#FF3040' : '#087CFF' } : styles.noDot]} />
                   </Pressable>;
                 })}
               </View>
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   todayText: { color: theme.navy, fontWeight: '800' },
   weekLabel: { fontSize: 11, color: theme.slate },
   dayNumber: { fontSize: 17, color: theme.navy, fontWeight: '700', marginTop: 7 },
-  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 8 },
+  dot: { width: 12, height: 12, borderRadius: 6, marginTop: 8, borderWidth: 1, borderColor: '#FFFFFF', elevation: 2 },
   noDot: { backgroundColor: 'transparent' },
   modal: { flex: 1, backgroundColor: theme.background, paddingTop: 42, paddingHorizontal: 18 },
   modalTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
