@@ -42,6 +42,7 @@ export default function Protocols() {
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [endReminderEnabled, setEndReminderEnabled] = useState(false);
+  const [reminderSettingsOpen, setReminderSettingsOpen] = useState(false);
   const durationMode = customEndDate ? 'custom' : durationWeeks !== null ? 'weeks' : 'indefinite';
   const setMode = (mode: 'indefinite' | 'weeks' | 'custom') => {
     if (mode === 'indefinite') { setDurationWeeks(null); setCustomEndDate(''); setEndReminderEnabled(false); }
@@ -91,6 +92,7 @@ export default function Protocols() {
     setCustomEndDate(entry.customEndDate ?? '');
     setReminderEnabled(entry.reminderEnabled === true);
     setEndReminderEnabled(entry.endReminderEnabled === true);
+    setReminderSettingsOpen(false);
     setSelectedId(null);
     setEditing(true);
   };
@@ -108,6 +110,7 @@ export default function Protocols() {
     setCustomEndDate('');
     setReminderEnabled(false);
     setEndReminderEnabled(false);
+    setReminderSettingsOpen(false);
   };
 
   const save = async () => {
@@ -208,7 +211,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setReminderEnabled(false); setEndReminderEnabled(false); setEditing(true); }}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setReminderEnabled(false); setEndReminderEnabled(false); setReminderSettingsOpen(false); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -324,22 +327,33 @@ export default function Protocols() {
           {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks, customEndDate})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? 'none selected'}.</Text>}
           {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>Choose a start date for a fixed duration.</Text>}
           <View style={styles.reminderCard}>
-            <Pressable accessibilityRole="switch" accessibilityState={{checked: reminderEnabled}} style={styles.reminderRow} onPress={() => { setReminderEnabled(v => !v); if (reminderEnabled) setEndReminderEnabled(false); }}>
+            <Pressable accessibilityRole="button" accessibilityState={{expanded: reminderSettingsOpen}} style={styles.reminderRow} onPress={() => setReminderSettingsOpen(v => !v)}>
+              <View style={styles.reminderIcon}><Ionicons name="notifications-outline" size={23} color={theme.navy}/></View>
               <View style={{flex:1}}>
-                <Text style={styles.reminderTitle}>Activity reminders</Text>
-                <Text style={styles.reminderHelp}>Discreet Android alerts at your selected days and time. Off by default.</Text>
+                <Text style={styles.reminderTitle}>Set reminders</Text>
+                <Text style={styles.reminderHelp}>{reminderEnabled ? 'Notification on' + (endReminderEnabled && durationMode !== 'indefinite' ? ' · Final alert on' : '') : 'Off · Choose how Protocol notifies you'}</Text>
               </View>
-              <Ionicons name={reminderEnabled ? 'checkbox' : 'square-outline'} size={29} color={reminderEnabled ? theme.teal : theme.slate}/>
+              <Ionicons name={reminderSettingsOpen ? 'chevron-up' : 'chevron-forward'} size={22} color={theme.slate}/>
             </Pressable>
-            {reminderEnabled && <>
-              <Text style={styles.reminderHelp}>Android notification permission is requested when you save.</Text>
-              {durationMode !== 'indefinite' && <Pressable accessibilityRole="switch" accessibilityState={{checked: endReminderEnabled}} style={styles.reminderRow} onPress={() => setEndReminderEnabled(v => !v)}>
+            {reminderSettingsOpen && <>
+              <View style={styles.reminderDivider}/>
+              <Pressable accessibilityRole="switch" accessibilityState={{checked: reminderEnabled}} style={styles.reminderRow} onPress={() => { setReminderEnabled(v => !v); if (reminderEnabled) setEndReminderEnabled(false); }}>
+                <Ionicons name="notifications-outline" size={22} color={theme.slate}/>
                 <View style={{flex:1}}>
-                  <Text style={styles.reminderTitle}>Final activity notification</Text>
-                  <Text style={styles.reminderHelp}>Use a different notification message on the last scheduled activity.</Text>
+                  <Text style={styles.reminderTitle}>Notification</Text>
+                  <Text style={styles.reminderHelp}>Discreet alert at your scheduled time</Text>
                 </View>
-                <Ionicons name={endReminderEnabled ? 'checkbox' : 'square-outline'} size={29} color={endReminderEnabled ? theme.teal : theme.slate}/>
+                <Ionicons name={reminderEnabled ? 'checkbox' : 'square-outline'} size={27} color={reminderEnabled ? theme.teal : theme.slate}/>
+              </Pressable>
+              {reminderEnabled && durationMode !== 'indefinite' && <Pressable accessibilityRole="switch" accessibilityState={{checked: endReminderEnabled}} style={styles.reminderRow} onPress={() => setEndReminderEnabled(v => !v)}>
+                <Ionicons name="flag-outline" size={22} color={theme.slate}/>
+                <View style={{flex:1}}>
+                  <Text style={styles.reminderTitle}>Final activity alert</Text>
+                  <Text style={styles.reminderHelp}>Different message on your last scheduled activity</Text>
+                </View>
+                <Ionicons name={endReminderEnabled ? 'checkbox' : 'square-outline'} size={27} color={endReminderEnabled ? theme.teal : theme.slate}/>
               </Pressable>}
+              <Text style={styles.reminderHelp}>Alarm mode is planned for a later update. Android notification permission is requested when saving with notifications enabled.</Text>
             </>}
           </View>
           <Text style={styles.label}>Schedule notes (optional)</Text>
@@ -427,6 +441,8 @@ const styles = StyleSheet.create({
   detailsEdit: { flex:1,backgroundColor:theme.navy,borderRadius:12,padding:14,flexDirection:'row',justifyContent:'center',alignItems:'center',gap:8 },
   detailsDelete: { borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:20,flexDirection:'row',alignItems:'center',gap:7 },
   reminderCard: { borderWidth:1,borderColor:theme.border,backgroundColor:theme.white,borderRadius:12,padding:14,marginBottom:22 },
+  reminderIcon: { width:42,height:42,borderRadius:10,backgroundColor:theme.background,alignItems:'center',justifyContent:'center' },
+  reminderDivider: {height:1,backgroundColor:theme.border,marginVertical:9},
   reminderRow: { flexDirection:'row',alignItems:'center',gap:12,paddingVertical:8 },
   reminderTitle: { color:theme.navy,fontSize:15,fontWeight:'700',marginBottom:4 },
   reminderHelp: { color:theme.slate,fontSize:12,lineHeight:18,marginBottom:6 },
