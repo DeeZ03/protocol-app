@@ -97,8 +97,8 @@ export default function Protocols() {
   };
 
   const save = async () => {
-    if (!name.trim() || !compound.trim() || !schedule.trim()) {
-      Alert.alert('Missing information', 'Enter a name, compound and schedule to continue.');
+    if (!name.trim() || !compound.trim()) {
+      Alert.alert('Missing information', 'Enter a name and compound to continue.');
       return;
     }
     if (days.length > 0 && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time.trim())) {
@@ -254,7 +254,7 @@ export default function Protocols() {
           </Pressable>}
           {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks, customEndDate})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? 'none selected'}.</Text>}
           {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>Choose a start date for a fixed duration.</Text>}
-          <Text style={styles.label}>Schedule notes</Text>
+          <Text style={styles.label}>Schedule notes (optional)</Text>
           <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
           <Pressable accessibilityRole="button" disabled={saving} style={[styles.saveButton, saving && styles.disabled]} onPress={save}>
