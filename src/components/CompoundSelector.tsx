@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Entry = { name: string; aliases?: string; tags: string[]; conditions?: string[] };
 const entries: Entry[] = [
@@ -116,6 +117,39 @@ const entries: Entry[] = [
  {name:"Levodopa/Carbidopa",aliases:"Sinemet",tags:["Medications"],conditions:["Parkinson's disease"]},
  {name:"Donepezil",aliases:"Aricept",tags:["Medications"],conditions:["Alzheimer's disease"]},
 ];
+const compoundInfo: Record<string, { description: string; route: string; icon: 'medical-outline' | 'bandage-outline' | 'water-outline' | 'help-circle-outline' }> = {
+ 'GHK-Cu': {description:'A copper-binding peptide investigated in skin and tissue research. Clinical benefits are not established.',route:'Research compound; route varies',icon:'help-circle-outline'},
+ 'Semaglutide': {description:'A GLP-1 receptor agonist prescribed for type 2 diabetes and, in certain products, weight management.',route:'Injection or oral tablet, depending on product',icon:'medical-outline'},
+ 'Tirzepatide': {description:'A GIP/GLP-1 receptor agonist used in certain approved treatments for diabetes and weight management.',route:'Injection',icon:'medical-outline'},
+ 'Retatrutide': {description:'An investigational triple hormone-receptor agonist being studied for metabolic conditions.',route:'Investigational injection',icon:'medical-outline'},
+ 'BPC-157': {description:'An experimental peptide studied mainly in preclinical research. It is not an approved medicine.',route:'No established approved route',icon:'help-circle-outline'},
+ 'TB-500': {description:'A research peptide associated with thymosin beta-4 fragments; human clinical evidence is limited.',route:'No established approved route',icon:'help-circle-outline'},
+ 'Somatropin': {description:'A manufactured form of human growth hormone used for specific diagnosed growth-hormone disorders.',route:'Injection',icon:'medical-outline'},
+ 'Testosterone Cypionate': {description:'A long-acting testosterone ester used in prescribed testosterone replacement in some countries.',route:'Injection',icon:'medical-outline'},
+ 'Testosterone Enanthate': {description:'A testosterone ester used in certain testosterone replacement products.',route:'Injection',icon:'medical-outline'},
+ 'Clomiphene': {description:'A selective oestrogen receptor modulator used in fertility care; other uses may be off-label.',route:'Oral tablet',icon:'bandage-outline'},
+ 'Tamoxifen': {description:'A selective oestrogen receptor modulator used for certain hormone-sensitive breast cancers.',route:'Oral tablet or liquid',icon:'bandage-outline'},
+ 'hCG': {description:'Human chorionic gonadotropin, a hormone medicine used in certain fertility and endocrine treatments.',route:'Injection',icon:'medical-outline'},
+ 'Levothyroxine': {description:'Synthetic T4 thyroid hormone used to replace low thyroid hormone levels, including in hypothyroidism.',route:'Usually oral tablet',icon:'bandage-outline'},
+ 'Liothyronine': {description:'Synthetic T3 thyroid hormone used for selected thyroid conditions under medical supervision.',route:'Usually oral tablet',icon:'bandage-outline'},
+ 'Metformin': {description:'A medicine that helps lower blood glucose, commonly prescribed for type 2 diabetes.',route:'Oral tablet or liquid',icon:'bandage-outline'},
+ 'Insulin Aspart': {description:'A rapid-acting insulin used to manage blood glucose in diabetes.',route:'Injection or insulin pump',icon:'medical-outline'},
+ 'Hydroxychloroquine': {description:'A medicine used for autoimmune conditions including lupus and rheumatoid arthritis.',route:'Oral tablet',icon:'bandage-outline'},
+ 'Mycophenolate Mofetil': {description:'An immunosuppressant used in transplant care and certain autoimmune conditions.',route:'Oral or intravenous, depending on product',icon:'bandage-outline'},
+ 'Salbutamol': {description:'A short-acting bronchodilator used to relieve symptoms of asthma and other airway conditions.',route:'Usually inhaler or nebuliser',icon:'water-outline'},
+ 'Amlodipine': {description:'A calcium-channel blocker prescribed for high blood pressure and some forms of angina.',route:'Oral tablet or liquid',icon:'bandage-outline'},
+ 'Sertraline': {description:'An SSRI antidepressant prescribed for depression and certain anxiety-related conditions.',route:'Oral tablet or liquid',icon:'bandage-outline'},
+ 'Tesamorelin': {description:'A growth-hormone-releasing factor analogue approved in some countries for a specific HIV-associated condition.',route:'Injection',icon:'medical-outline'},
+ 'Liraglutide': {description:'A GLP-1 receptor agonist used in some treatments for type 2 diabetes and weight management.',route:'Injection',icon:'medical-outline'},
+ 'Dulaglutide': {description:'A GLP-1 receptor agonist used in type 2 diabetes treatment.',route:'Injection',icon:'medical-outline'},
+ 'Prednisolone': {description:'A corticosteroid used to reduce inflammation in various conditions.',route:'Oral and other formulations',icon:'bandage-outline'},
+ 'Methotrexate': {description:'A medicine used for certain inflammatory diseases and cancers, with different treatment schedules.',route:'Oral tablet or injection',icon:'bandage-outline'},
+ 'Adalimumab': {description:'A biologic medicine that blocks TNF-alpha in certain inflammatory conditions.',route:'Injection',icon:'medical-outline'},
+ 'Omeprazole': {description:'A proton-pump inhibitor that reduces stomach acid.',route:'Oral capsule or tablet',icon:'bandage-outline'},
+ 'Atorvastatin': {description:'A statin medicine used to lower LDL cholesterol and reduce cardiovascular risk.',route:'Oral tablet',icon:'bandage-outline'},
+ 'Sildenafil': {description:'A PDE5 inhibitor prescribed for erectile dysfunction or pulmonary hypertension in different products.',route:'Usually oral tablet',icon:'bandage-outline'},
+ 'Tadalafil': {description:'A PDE5 inhibitor used for certain erectile, urinary and pulmonary vascular conditions.',route:'Oral tablet',icon:'bandage-outline'}
+};
 const categories = [
  {name:'Peptides',icon:'flask-outline',subtitle:'Research & therapeutic'},
  {name:'TRT & Hormones',icon:'pulse-outline',subtitle:'Testosterone, HGH & more'},
@@ -126,11 +160,13 @@ const categories = [
 ] as const;
 type Props = {visible:boolean; selected:string; onSelect:(name:string)=>void; onClose:()=>void};
 export default function CompoundSelector({visible,selected,onSelect,onClose}:Props) {
+ const insets = useSafeAreaInsets();
+ const [infoEntry,setInfoEntry]=useState<Entry | null>(null);
  const [category,setCategory]=useState('');
  const [condition,setCondition]=useState('');
  const [query,setQuery]=useState('');
  const [manual,setManual]=useState('');
- const reset=()=>{setCategory('');setCondition('');setQuery('');setManual('');};
+ const reset=()=>{setCategory('');setCondition('');setQuery('');setManual('');setInfoEntry(null);};
  const exit=()=>{reset();onClose();};
  const choose=(value:string)=>{onSelect(value);exit();};
  const conditions=Array.from(new Set(entries.flatMap(e=>e.conditions??[]))).sort();
@@ -142,18 +178,19 @@ export default function CompoundSelector({visible,selected,onSelect,onClose}:Pro
   return matches && section && conditionMatch;
  });
  return <Modal visible={visible} animationType="slide" onRequestClose={exit}>
-  <View style={styles.page}>
+  <View style={[styles.page,{paddingTop:Math.max(insets.top+16,40)}]}>
    <View style={styles.header}><Pressable onPress={()=>{if(condition)setCondition('');else if(category)setCategory('');else exit();}}><Ionicons name="arrow-back" size={25} color={theme.navy}/></Pressable><Text style={styles.title}>Choose compound</Text><Pressable onPress={exit}><Text style={styles.link}>Cancel</Text></Pressable></View>
    {category !== 'Manual Entry' && <TextInput style={styles.search} placeholder="Search compounds, brands or conditions" value={query} onChangeText={setQuery} autoCorrect={false}/> }
    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     {!category && !term ? <View style={styles.grid}>{categories.map(c=><Pressable key={c.name} style={styles.tile} onPress={()=>{if(c.name==='Manual Entry')setCategory('Manual Entry');else setCategory(c.name);}}><Ionicons name={c.icon} size={25} color={theme.teal}/><Text style={styles.tileTitle}>{c.name}</Text><Text style={styles.subtitle}>{c.subtitle}</Text></Pressable>)}</View> : null}
     {category==='Manual Entry' && !term ? <><Text style={styles.section}>Enter a compound or medication</Text><TextInput style={styles.search} value={manual} onChangeText={setManual} placeholder="Type a name" maxLength={100}/><Pressable style={[styles.primary,!manual.trim()&&styles.disabled]} disabled={!manual.trim()} onPress={()=>choose(manual.trim())}><Text style={styles.primaryText}>Use this name</Text></Pressable></> : null}
     {category==='Health Conditions' && !condition && !term ? <><Text style={styles.section}>Browse by condition</Text>{conditions.map(name=><Pressable key={name} style={styles.result} onPress={()=>setCondition(name)}><Text style={styles.resultName}>{name}</Text><Ionicons name="chevron-forward" size={18} color={theme.slate}/></Pressable>)}</> : null}
-    {(!!term || (!!category && category!=='Manual Entry' && category!=='Health Conditions') || !!condition) ? <><Text style={styles.section}>{term?'Search results':condition||category}</Text><Text style={styles.note}>Associated listings are for browsing only, not treatment recommendations.</Text>{results.map(e=><Pressable key={e.name} style={styles.result} onPress={()=>choose(e.name)}><View style={{flex:1}}><Text style={styles.resultName}>{e.name}</Text><Text style={styles.subtitle}>{e.tags.join(' · ')}</Text></View><Ionicons name="add-circle-outline" size={24} color={theme.teal}/></Pressable>)}{results.length===0&&<Text style={styles.note}>No matches in this starter catalogue. Use Manual Entry to add your own.</Text>}</> : null}
+    {(!!term || (!!category && category!=='Manual Entry' && category!=='Health Conditions') || !!condition) ? <><Text style={styles.section}>{term?'Search results':condition||category}</Text><Text style={styles.note}>Associated listings are for browsing only, not treatment recommendations.</Text>{results.map(e=><Pressable key={e.name} style={styles.result} onPress={()=>choose(e.name)}><View style={{flex:1}}><Text style={styles.resultName}>{e.name}</Text><Text style={styles.subtitle}>{e.tags.join(' · ')}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={\`Information about \${e.name}\`} hitSlop={8} onPress={()=>setInfoEntry(e)} style={styles.infoButton}><Ionicons name="information-circle-outline" size={25} color={theme.slate}/></Pressable><Ionicons name="add-circle-outline" size={24} color={theme.teal}/></Pressable>)}{results.length===0&&<Text style={styles.note}>No matches in this starter catalogue. Use Manual Entry to add your own.</Text>}</> : null}
     {(!!term || category && category!=='Manual Entry') && <Pressable style={styles.manualLink} onPress={()=>{setCategory('Manual Entry');setQuery('');setCondition('');setManual(query);}}><Ionicons name="create-outline" size={20} color={theme.teal}/><Text style={styles.link}>Enter a name manually</Text></Pressable>}
     <Text style={styles.footer}>Starter catalogue for navigation testing. More entries will be added later. No dosing or medical guidance.</Text>
    </ScrollView>
   </View>
+  <Modal visible={!!infoEntry} transparent animationType="fade" onRequestClose={()=>setInfoEntry(null)}><View style={styles.infoBackdrop}><View style={styles.infoSheet}><View style={styles.infoHeader}><Text style={styles.section}>{infoEntry?.name}</Text><Pressable accessibilityRole="button" accessibilityLabel="Close information" onPress={()=>setInfoEntry(null)}><Ionicons name="close" size={26} color={theme.navy}/></Pressable></View><Text style={styles.note}>{infoEntry && (compoundInfo[infoEntry.name]?.description || 'This compound is listed for identification and tracking. A verified short description has not yet been added.')}</Text><View style={styles.routeRow}><Ionicons name={infoEntry ? (compoundInfo[infoEntry.name]?.icon || 'help-circle-outline') : 'help-circle-outline'} size={22} color={theme.teal}/><Text style={styles.subtitle}>{infoEntry && (compoundInfo[infoEntry.name]?.route || 'Administration depends on the specific product')}</Text></View><Text style={styles.footer}>Information only, not a recommendation or dosing guidance. Approval and available formulations vary by country.</Text><Pressable style={styles.primary} onPress={()=>setInfoEntry(null)}><Text style={styles.primaryText}>Close</Text></Pressable></View></View></Modal>
  </Modal>;
 }
 const styles=StyleSheet.create({
@@ -170,5 +207,6 @@ const styles=StyleSheet.create({
  note:{color:theme.slate,fontSize:13,lineHeight:20,marginBottom:15},
  manualLink:{flexDirection:'row',gap:8,alignItems:'center',paddingVertical:18},
  primary:{backgroundColor:theme.navy,borderRadius:12,padding:16,alignItems:'center'},primaryText:{color:theme.white,fontWeight:'700'},
+ infoButton:{padding:8,marginRight:2},infoBackdrop:{flex:1,backgroundColor:'rgba(0,0,0,0.55)',justifyContent:'center',padding:24},infoSheet:{backgroundColor:theme.background,borderRadius:18,padding:22},infoHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10},routeRow:{flexDirection:'row',alignItems:'center',gap:10,marginBottom:14},
  disabled:{opacity:0.4},footer:{color:theme.muted,fontSize:12,lineHeight:18,marginTop:22},
 });
