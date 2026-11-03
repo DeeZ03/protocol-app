@@ -1,6 +1,7 @@
-export type ScheduledProtocol = { days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null };
+export type ScheduledProtocol = { days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string };
 export const dateKey = (d: Date) => [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 export function endDate(p: ScheduledProtocol): string | null {
+ if (p.customEndDate) return p.customEndDate;
  if (!p.startDate || !p.durationWeeks || p.durationWeeks < 1) return null;
  const [y,m,d] = p.startDate.split('-').map(Number);
  const last = new Date(y,m-1,d+p.durationWeeks*7-1,12);
