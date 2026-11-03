@@ -6,6 +6,7 @@ import { theme } from '../../src/theme';
 import { syncReminders } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
+import { Ionicons } from '@expo/vector-icons';
 import CompoundSelector from '../../src/components/CompoundSelector';
 
 type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string };
@@ -22,6 +23,8 @@ export default function Protocols() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedProtocol = items.find(item => item.id === selectedId);
   const [name, setName] = useState('');
   const [compound, setCompound] = useState('');
   const [compoundPickerOpen, setCompoundPickerOpen] = useState(false);
@@ -80,6 +83,7 @@ export default function Protocols() {
     setStartDate(entry.startDate ?? '');
     setDurationWeeks(entry.durationWeeks ?? null);
     setCustomEndDate(entry.customEndDate ?? '');
+    setSelectedId(null);
     setEditing(true);
   };
 
@@ -155,6 +159,7 @@ export default function Protocols() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         const next = items.filter(item => item.id !== entry.id);
+        setSelectedId(null);
         try {
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
           setItems(next);
@@ -189,28 +194,53 @@ export default function Protocols() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name} details`} style={styles.card} onPress={() => setSelectedId(item.id)}>
             <View style={styles.cardTop}>
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <View style={styles.actions}>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${item.name}`} onPress={() => openEdit(item)} hitSlop={10}>
-                  <Text style={styles.edit}>Edit</Text>
-                </Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${item.name}`} onPress={() => remove(item)} hitSlop={10}>
-                  <Text style={styles.delete}>Delete</Text>
-                </Pressable>
-              </View>
+              <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
             </View>
-            <Text style={styles.detail}>Compound: {item.compound}</Text>
-            <Text style={styles.detail}>Notes: {item.schedule}</Text>
-            {item.days && item.days.length > 0 && <Text style={styles.detail}>Days: {item.days.map(day => DAYS[day]).join(', ')} at {item.time}</Text>}
-            {!!item.startDate && <Text style={styles.detail}>Start date: {item.startDate}</Text>}
-            <Text style={styles.detail}>Duration: {item.customEndDate ? 'Custom end date' : item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
-            {!!endDate(item) && <Text style={styles.detail}>Ends: {endDate(item)} · Last scheduled: {finalScheduledDate(item) ?? 'None'}</Text>}
-          </View>
+            <Text style={styles.detail}>{item.compound}</Text>
+            {item.days && item.days.length > 0 && <Text style={styles.detail}>{item.days.map(day => DAYS[day]).join(', ')} at {item.time}</Text>}
+            <Text style={styles.detail}>{item.customEndDate ? 'Custom end date' : item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
+          </Pressable>
         )}
         ListFooterComponent={<Text style={styles.disclaimer}>Prototype for testing only. Do not enter sensitive personal health information. No medical advice or dosing recommendations are provided. Records are stored on this device and are not synced or backed up.</Text>}
       />
+      <Modal visible={!!selectedProtocol} transparent animationType="fade" onRequestClose={() => setSelectedId(null)}>
+        <View style={styles.detailsBackdrop}>
+          <View style={styles.detailsSheet}>
+            <View style={styles.detailsHeader}>
+              <Text style={styles.heading}>{selectedProtocol?.name}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close details" onPress={() => setSelectedId(null)}>
+                <Ionicons name="close" size={26} color={theme.navy}/>
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.detailsScroll}>
+              {selectedProtocol && <>
+                <Text style={styles.detailsLabel}>COMPOUND</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.compound}</Text>
+                <Text style={styles.detailsLabel}>SCHEDULE</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.days?.length ? selectedProtocol.days.map(day => DAYS[day]).join(', ') + ' at ' + selectedProtocol.time : 'No scheduled days'}</Text>
+                <Text style={styles.detailsLabel}>START DATE</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.startDate || 'Not set'}</Text>
+                <Text style={styles.detailsLabel}>DURATION</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.customEndDate ? 'Custom end date' : selectedProtocol.durationWeeks ? selectedProtocol.durationWeeks + (selectedProtocol.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
+                {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>Ends: {endDate(selectedProtocol)}\nLast scheduled: {finalScheduledDate(selectedProtocol) ?? 'None'}</Text>}
+                <Text style={styles.detailsLabel}>SCHEDULE NOTES</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || 'No notes added'}</Text>
+              </>}
+            </ScrollView>
+            <View style={styles.detailsActions}>
+              <Pressable accessibilityRole="button" style={styles.detailsEdit} onPress={() => { if (selectedProtocol) openEdit(selectedProtocol); }}>
+                <Ionicons name="create-outline" size={19} color={theme.white}/><Text style={styles.saveText}>Edit</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" style={styles.detailsDelete} onPress={() => { if (selectedProtocol) remove(selectedProtocol); }}>
+                <Ionicons name="trash-outline" size={19} color="#B42318"/><Text style={styles.delete}>Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal visible={editing} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
         <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalHeader}>
@@ -221,7 +251,14 @@ export default function Protocols() {
           <Text style={styles.label}>Protocol name</Text>
           <TextInput style={styles.input} placeholder="e.g. My routine" value={name} onChangeText={setName} maxLength={80} />
           <Text style={styles.label}>Compound name</Text>
-          <Pressable accessibilityRole="button" style={styles.input} onPress={() => setCompoundPickerOpen(true)}><Text style={styles.pickerText}>{compound || "Browse or search compounds"}</Text></Pressable>
+          <Pressable accessibilityRole="button" style={styles.browseButton} onPress={() => setCompoundPickerOpen(true)}>
+            <Ionicons name="search-outline" size={23} color={theme.teal}/>
+            <View style={{flex:1}}>
+              <Text style={styles.browseTitle}>{compound || 'Browse compounds'}</Text>
+              <Text style={styles.browseSubtitle}>Search medications, peptides and more</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
+          </Pressable>
           <Text style={styles.label}>Scheduled days (optional)</Text>
           <View style={styles.dayRow}>
             {DAYS.map((day, index) => {
@@ -326,5 +363,17 @@ const styles = StyleSheet.create({
   help: { fontSize: 13, color: theme.muted, lineHeight: 20, marginBottom: 22 },
   saveButton: { backgroundColor: theme.navy, borderRadius: 12, padding: 16, alignItems: 'center' },
   saveText: { color: theme.white, fontWeight: '700', fontSize: 16 },
+  browseButton: { flexDirection:'row',alignItems:'center',gap:12,backgroundColor:theme.white,borderWidth:1,borderColor:theme.border,borderRadius:12,padding:15,marginBottom:20 },
+  browseTitle: { color:theme.navy,fontSize:16,fontWeight:'700' },
+  browseSubtitle: { color:theme.slate,fontSize:12,marginTop:3 },
+  detailsBackdrop: { flex:1,backgroundColor:'#0009',justifyContent:'center',paddingHorizontal:20,paddingVertical:55 },
+  detailsSheet: { backgroundColor:theme.background,borderRadius:20,padding:20,maxHeight:'100%' },
+  detailsHeader: { flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:14 },
+  detailsScroll: { flexGrow:0 },
+  detailsLabel: { color:theme.teal,fontWeight:'800',fontSize:12,letterSpacing:1,marginTop:16,marginBottom:6 },
+  detailsValue: { color:theme.navy,fontSize:16,lineHeight:24 },
+  detailsActions: { flexDirection:'row',gap:12,paddingTop:20 },
+  detailsEdit: { flex:1,backgroundColor:theme.navy,borderRadius:12,padding:14,flexDirection:'row',justifyContent:'center',alignItems:'center',gap:8 },
+  detailsDelete: { borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:20,flexDirection:'row',alignItems:'center',gap:7 },
   disabled: { opacity: 0.5 },
 });
