@@ -6,6 +6,7 @@ import { theme } from '../../src/theme';
 import { syncReminders } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
+import CompoundSelector from '../../src/components/CompoundSelector';
 
 type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -23,6 +24,7 @@ export default function Protocols() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [compound, setCompound] = useState('');
+  const [compoundPickerOpen, setCompoundPickerOpen] = useState(false);
   const [schedule, setSchedule] = useState('');
   const [saving, setSaving] = useState(false);
   const [days, setDays] = useState<number[]>([]);
@@ -219,7 +221,7 @@ export default function Protocols() {
           <Text style={styles.label}>Protocol name</Text>
           <TextInput style={styles.input} placeholder="e.g. My routine" value={name} onChangeText={setName} maxLength={80} />
           <Text style={styles.label}>Compound name</Text>
-          <TextInput style={styles.input} placeholder="Enter a name" value={compound} onChangeText={setCompound} maxLength={100} />
+          <Pressable accessibilityRole="button" style={styles.input} onPress={() => setCompoundPickerOpen(true)}><Text style={styles.pickerText}>{compound || "Browse or search compounds"}</Text></Pressable>
           <Text style={styles.label}>Scheduled days (optional)</Text>
           <View style={styles.dayRow}>
             {DAYS.map((day, index) => {
@@ -261,6 +263,7 @@ export default function Protocols() {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
+      <CompoundSelector visible={compoundPickerOpen} selected={compound} onSelect={setCompound} onClose={() => setCompoundPickerOpen(false)}/>
       <Modal visible={weekPickerOpen} transparent animationType="fade" onRequestClose={() => setWeekPickerOpen(false)}>
         <View style={styles.pickerOverlay}>
           <View style={styles.pickerSheet}>
