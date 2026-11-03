@@ -9,7 +9,7 @@ import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
 import { Ionicons } from '@expo/vector-icons';
 import CompoundSelector from '../../src/components/CompoundSelector';
 
-type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string; reminderEnabled?: boolean; endReminderEnabled?: boolean };
+type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string; reminderEnabled?: boolean; endReminderEnabled?: boolean; alertMode?: 'standard' | 'prominent' };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const validDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -42,6 +42,7 @@ export default function Protocols() {
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [endReminderEnabled, setEndReminderEnabled] = useState(false);
+  const [alertMode, setAlertMode] = useState<'standard' | 'prominent'>('standard');
   const [reminderSettingsOpen, setReminderSettingsOpen] = useState(false);
   const durationMode = customEndDate ? 'custom' : durationWeeks !== null ? 'weeks' : 'indefinite';
   const setMode = (mode: 'indefinite' | 'weeks' | 'custom') => {
@@ -92,6 +93,7 @@ export default function Protocols() {
     setCustomEndDate(entry.customEndDate ?? '');
     setReminderEnabled(entry.reminderEnabled === true);
     setEndReminderEnabled(entry.endReminderEnabled === true);
+    setAlertMode(entry.alertMode === 'prominent' ? 'prominent' : 'standard');
     setReminderSettingsOpen(false);
     setSelectedId(null);
     setEditing(true);
@@ -110,6 +112,7 @@ export default function Protocols() {
     setCustomEndDate('');
     setReminderEnabled(false);
     setEndReminderEnabled(false);
+    setAlertMode('standard');
     setReminderSettingsOpen(false);
   };
 
@@ -171,6 +174,7 @@ export default function Protocols() {
       durationWeeks,
       customEndDate,
       reminderEnabled,
+      alertMode: reminderEnabled ? alertMode : 'standard',
       endReminderEnabled: reminderEnabled && durationMode !== 'indefinite' && endReminderEnabled,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
@@ -211,7 +215,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setReminderEnabled(false); setEndReminderEnabled(false); setReminderSettingsOpen(false); setEditing(true); }}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setReminderEnabled(false); setEndReminderEnabled(false); setAlertMode('standard'); setReminderSettingsOpen(false); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -259,7 +263,7 @@ export default function Protocols() {
                 <Text style={styles.detailsValue}>{selectedProtocol.customEndDate ? 'Custom end date' : selectedProtocol.durationWeeks ? selectedProtocol.durationWeeks + (selectedProtocol.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
                 {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>Ends: {endDate(selectedProtocol)}{'\n'}Last scheduled: {finalScheduledDate(selectedProtocol) ?? 'None'}</Text>}
                 <Text style={styles.detailsLabel}>REMINDERS</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.reminderEnabled === true ? 'On' : 'Off'}{selectedProtocol.reminderEnabled === true && selectedProtocol.endReminderEnabled === true ? ' · Final activity alert on' : ''}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.reminderEnabled === true ? (selectedProtocol.alertMode === 'prominent' ? 'Prominent alert' : 'Standard notification') : 'Off'}{selectedProtocol.reminderEnabled === true && selectedProtocol.endReminderEnabled === true ? ' · Final activity alert on' : ''}</Text>
                 <Text style={styles.detailsLabel}>SCHEDULE NOTES</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || 'No notes added'}</Text>
               </>}
@@ -344,6 +348,15 @@ export default function Protocols() {
                 </View>
                 <Ionicons name={reminderEnabled ? 'checkbox' : 'square-outline'} size={27} color={reminderEnabled ? theme.teal : theme.slate}/>
               </Pressable>
+              {reminderEnabled && <View style={{paddingVertical: 8}}>
+                <Text style={styles.reminderTitle}>Alert style</Text>
+                <View style={{flexDirection:'row',gap:10,marginBottom:8}}>
+                  {(['standard','prominent'] as const).map(mode => <Pressable key={mode} accessibilityRole="radio" accessibilityState={{checked:alertMode===mode}} onPress={()=>setAlertMode(mode)} style={{flex:1,borderWidth:1,borderColor:alertMode===mode?theme.teal:theme.border,borderRadius:9,padding:11,backgroundColor:alertMode===mode?'#E8F7F7':theme.white,alignItems:'center'}}>
+                    <Text style={{color:theme.navy,fontWeight:'700'}}>{mode==='standard'?'Standard':'Prominent'}</Text>
+                  </Pressable>)}
+                </View>
+                <Text style={styles.reminderHelp}>Prominent uses a high-priority Android notification with sound and vibration, not a repeating alarm. Device settings can limit alerts.</Text>
+              </View>}
               {reminderEnabled && durationMode !== 'indefinite' && <Pressable accessibilityRole="switch" accessibilityState={{checked: endReminderEnabled}} style={styles.reminderRow} onPress={() => setEndReminderEnabled(v => !v)}>
                 <Ionicons name="flag-outline" size={22} color={theme.slate}/>
                 <View style={{flex:1}}>
@@ -352,7 +365,7 @@ export default function Protocols() {
                 </View>
                 <Ionicons name={endReminderEnabled ? 'checkbox' : 'square-outline'} size={27} color={endReminderEnabled ? theme.teal : theme.slate}/>
               </Pressable>}
-              <Text style={styles.reminderHelp}>Alarm mode is planned for a later update. Android notification permission is requested when saving with notifications enabled.</Text>
+              <Text style={styles.reminderHelp}>A full repeating alarm is planned separately. Android notification permission is requested when saving with notifications enabled.</Text>
             </>}
           </View>
           <Text style={styles.label}>Schedule notes (optional)</Text>
