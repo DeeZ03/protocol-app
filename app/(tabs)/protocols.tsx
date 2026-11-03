@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,6 +29,10 @@ export default function Protocols() {
   const [compound, setCompound] = useState('');
   const [compoundPickerOpen, setCompoundPickerOpen] = useState(false);
   const [schedule, setSchedule] = useState('');
+  const formScrollRef = useRef<ScrollView>(null);
+  const scrollToNotes = () => {
+    setTimeout(() => formScrollRef.current?.scrollToEnd({ animated: true }), 300);
+  };
   const [saving, setSaving] = useState(false);
   const [days, setDays] = useState<number[]>([]);
   const [time, setTime] = useState('');
@@ -225,7 +229,7 @@ export default function Protocols() {
                 <Text style={styles.detailsValue}>{selectedProtocol.startDate || 'Not set'}</Text>
                 <Text style={styles.detailsLabel}>DURATION</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.customEndDate ? 'Custom end date' : selectedProtocol.durationWeeks ? selectedProtocol.durationWeeks + (selectedProtocol.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
-                {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>Ends: {endDate(selectedProtocol)}\nLast scheduled: {finalScheduledDate(selectedProtocol) ?? 'None'}</Text>}
+                {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>Ends: {endDate(selectedProtocol)}{'\n'}Last scheduled: {finalScheduledDate(selectedProtocol) ?? 'None'}</Text>}
                 <Text style={styles.detailsLabel}>SCHEDULE NOTES</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || 'No notes added'}</Text>
               </>}
@@ -242,12 +246,12 @@ export default function Protocols() {
         </View>
       </Modal>
       <Modal visible={editing} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
-        <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalHeader}>
             <Text style={styles.heading}>{editingId ? 'Edit protocol' : 'Add protocol'}</Text>
             <Pressable accessibilityRole="button" onPress={close}><Text style={styles.cancel}>Cancel</Text></Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.formContent}>
+          <ScrollView ref={formScrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.formContent}>
           <Text style={styles.label}>Protocol name</Text>
           <TextInput style={styles.input} placeholder="e.g. My routine" value={name} onChangeText={setName} maxLength={80} />
           <Text style={styles.label}>Compound name</Text>
@@ -292,7 +296,7 @@ export default function Protocols() {
           {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks, customEndDate})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? 'none selected'}.</Text>}
           {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>Choose a start date for a fixed duration.</Text>}
           <Text style={styles.label}>Schedule notes (optional)</Text>
-          <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} multiline maxLength={250} />
+          <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} onFocus={scrollToNotes} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
           <Pressable accessibilityRole="button" disabled={saving} style={[styles.saveButton, saving && styles.disabled]} onPress={save}>
             <Text style={styles.saveText}>{saving ? 'Saving...' : editingId ? 'Save changes' : 'Save protocol'}</Text>
@@ -339,7 +343,7 @@ const styles = StyleSheet.create({
   delete: { color: '#B42318', fontWeight: '600' },
   disclaimer: { fontSize: 12, color: theme.muted, lineHeight: 19, marginTop: 16 },
   modal: { flex: 1, backgroundColor: theme.background, paddingHorizontal: 22, paddingTop: 28 },
-  formContent: { paddingBottom: 40 },
+  formContent: { paddingBottom: 180 },
   dayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 20 },
   dayButton: { borderWidth: 1, borderColor: theme.border, backgroundColor: theme.white, borderRadius: 9, paddingVertical: 10, paddingHorizontal: 9 },
   daySelected: { backgroundColor: theme.navy, borderColor: theme.navy },
