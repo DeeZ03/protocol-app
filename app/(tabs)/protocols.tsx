@@ -4,8 +4,10 @@ import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { syncReminders } from '../../src/reminders';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
 
-type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string };
+type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const validDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -26,6 +28,20 @@ export default function Protocols() {
   const [days, setDays] = useState<number[]>([]);
   const [time, setTime] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
+  const openTimePicker = () => {
+    const [h, m] = /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time.split(':').map(Number) : [9, 0];
+    const value = new Date(); value.setHours(h, m, 0, 0);
+    DateTimePickerAndroid.open({ value, mode: 'time', is24Hour: true, onChange: (event, selected) => {
+      if (event.type === 'set' && selected) setTime(String(selected.getHours()).padStart(2, '0') + ':' + String(selected.getMinutes()).padStart(2, '0'));
+    }});
+  };
+  const openDatePicker = () => {
+    const value = startDate && validDate(startDate) ? new Date(startDate + 'T12:00:00') : new Date();
+    DateTimePickerAndroid.open({ value, mode: 'date', onChange: (event, selected) => {
+      if (event.type === 'set' && selected) setStartDate(dateKey(selected));
+    }});
+  };
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -46,6 +62,7 @@ export default function Protocols() {
     setDays(entry.days ?? []);
     setTime(entry.time ?? '');
     setStartDate(entry.startDate ?? '');
+    setDurationWeeks(entry.durationWeeks ?? null);
     setEditing(true);
   };
 
@@ -58,6 +75,7 @@ export default function Protocols() {
     setDays([]);
     setTime('');
     setStartDate('');
+    setDurationWeeks(null);
   };
 
   const save = async () => {
@@ -71,6 +89,10 @@ export default function Protocols() {
     }
     if (startDate.trim() && !validDate(startDate.trim())) {
       Alert.alert('Check start date', 'Enter a valid date as YYYY-MM-DD, for example 2026-11-02.');
+      return;
+    }
+    if (durationWeeks !== null && !startDate) {
+      Alert.alert('Choose a start date', 'A fixed-duration protocol needs a start date.');
       return;
     }
     if (saving) return;
@@ -89,6 +111,7 @@ export default function Protocols() {
       days: days.slice().sort((a, b) => a - b),
       time: days.length ? time.trim() : '',
       startDate: startDate.trim(),
+      durationWeeks,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     const next = existing ? items.map(item => item.id === existing.id ? entry : item) : [entry, ...items];
@@ -127,7 +150,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setEditing(true); }}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -159,6 +182,8 @@ export default function Protocols() {
             <Text style={styles.detail}>Notes: {item.schedule}</Text>
             {item.days && item.days.length > 0 && <Text style={styles.detail}>Days: {item.days.map(day => DAYS[day]).join(', ')} at {item.time}</Text>}
             {!!item.startDate && <Text style={styles.detail}>Start date: {item.startDate}</Text>}
+            <Text style={styles.detail}>Duration: {item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
+            {!!endDate(item) && <Text style={styles.detail}>Ends: {endDate(item)} · Last scheduled: {finalScheduledDate(item) ?? 'None'}</Text>}
           </View>
         )}
         ListFooterComponent={<Text style={styles.disclaimer}>Prototype for testing only. Do not enter sensitive personal health information. No medical advice or dosing recommendations are provided. Records are stored on this device and are not synced or backed up.</Text>}
@@ -186,9 +211,19 @@ export default function Protocols() {
             })}
           </View>
           <Text style={styles.label}>Time (24-hour format)</Text>
-          <TextInput style={styles.input} placeholder="e.g. 09:30" value={time} onChangeText={setTime} keyboardType="numbers-and-punctuation" maxLength={5} />
-          <Text style={styles.label}>Start date (optional)</Text>
-          <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" maxLength={10} />
+          <Pressable accessibilityRole="button" style={styles.input} onPress={openTimePicker}><Text style={styles.pickerText}>{time || 'Choose time'}</Text></Pressable>
+          <Text style={styles.label}>Start date (optional for indefinite protocols)</Text>
+          <Pressable accessibilityRole="button" style={styles.input} onPress={openDatePicker}><Text style={styles.pickerText}>{startDate || 'Choose start date'}</Text></Pressable>
+          {!!startDate && <Pressable onPress={() => setStartDate('')}><Text style={styles.clearText}>Clear start date</Text></Pressable>}
+          <Text style={styles.label}>Duration</Text>
+          <View style={styles.durationRow}>
+            {[null, ...Array.from({ length: 12 }, (_, i) => i + 1)].map(weeks => (
+              <Pressable key={weeks ?? 'indefinite'} accessibilityRole="button" accessibilityState={{ selected: durationWeeks === weeks }} style={[styles.durationButton, durationWeeks === weeks && styles.daySelected]} onPress={() => setDurationWeeks(weeks)}>
+                <Text style={[styles.dayText, durationWeeks === weeks && styles.daySelectedText]}>{weeks === null ? 'Indefinitely' : weeks + (weeks === 1 ? ' week' : ' weeks')}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {durationWeeks !== null && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, days, time}) ?? 'none selected'}.</Text>}
           <Text style={styles.label}>Schedule notes</Text>
           <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
@@ -233,6 +268,10 @@ const styles = StyleSheet.create({
   label: { color: theme.navy, fontWeight: '700', fontSize: 15, marginBottom: 8 },
   input: { borderWidth: 1, borderColor: theme.border, borderRadius: 10, backgroundColor: theme.white, padding: 13, fontSize: 16, color: theme.text, marginBottom: 20 },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
+  pickerText: { fontSize: 16, color: theme.text },
+  clearText: { color: theme.teal, fontWeight: '700', marginTop: -12, marginBottom: 20 },
+  durationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  durationButton: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: theme.white },
   help: { fontSize: 13, color: theme.muted, lineHeight: 20, marginBottom: 22 },
   saveButton: { backgroundColor: theme.navy, borderRadius: 12, padding: 16, alignItems: 'center' },
   saveText: { color: theme.white, fontWeight: '700', fontSize: 16 },
