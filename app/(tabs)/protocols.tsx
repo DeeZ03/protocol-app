@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { syncReminders, requestProtocolReminderPermission } from '../../src/reminders';
@@ -19,6 +20,7 @@ const validDate = (value: string) => {
 const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 
 export default function Protocols() {
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -280,7 +282,7 @@ export default function Protocols() {
         </View>
       </Modal>
       <Modal visible={editing} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
-        <KeyboardAvoidingView style={styles.modal} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <KeyboardAvoidingView style={[styles.modal, { paddingTop: Math.max(insets.top + 16, 28) }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalHeader}>
             <Text style={styles.heading}>{editingId ? 'Edit protocol' : 'Add protocol'}</Text>
             <Pressable accessibilityRole="button" onPress={close}><Text style={styles.cancel}>Cancel</Text></Pressable>
