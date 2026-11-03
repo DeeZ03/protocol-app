@@ -51,7 +51,7 @@ export async function syncReminders(): Promise<void> {
           title: 'Protocol',
           body: isFinal ? 'Your final scheduled activity is due.' : 'You have a scheduled activity.',
           sound: 'default',
-          data: { screen: 'dashboard' },
+          data: { screen: 'dashboard', protocolId: routine.id },
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when, channelId: CHANNEL },
       });
