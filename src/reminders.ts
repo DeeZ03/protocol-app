@@ -1,58 +1,60 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { dateKey, endDate, finalScheduledDate, isScheduled, ScheduledProtocol } from './protocolDates';
 
-export const REMINDER_KEY = 'protocol-app:reminders-enabled:v1';
 const PROTOCOL_KEY = 'protocol-app:test-protocols:v1';
-type Routine = { id: string; days?: number[]; time?: string; startDate?: string };
-const localKey = (d: Date) => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+const CHANNEL = 'protocol-reminders';
+type Routine = ScheduledProtocol & { id: string; reminderEnabled?: boolean; endReminderEnabled?: boolean };
+
+export async function requestProtocolReminderPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+  const current = await Notifications.getPermissionsAsync();
+  if (current.granted) return true;
+  const requested = await Notifications.requestPermissionsAsync();
+  return requested.granted;
+}
 
 export async function syncReminders(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  const enabled = (await AsyncStorage.getItem(REMINDER_KEY)) === 'true';
-  // All scheduled notifications are owned by Protocol in this prototype.
+  // Only notifications from this app are scheduled by this prototype.
   await Notifications.cancelAllScheduledNotificationsAsync();
-  if (!enabled) return;
+  const raw = await AsyncStorage.getItem(PROTOCOL_KEY);
+  const routines: Routine[] = raw ? JSON.parse(raw) : [];
+  if (!Array.isArray(routines) || !routines.some(r => r.reminderEnabled === true)) return;
   const permission = await Notifications.getPermissionsAsync();
   if (!permission.granted) return;
-  await Notifications.setNotificationChannelAsync('protocol-reminders', {
+  await Notifications.setNotificationChannelAsync(CHANNEL, {
     name: 'Protocol reminders',
     importance: Notifications.AndroidImportance.DEFAULT,
     sound: 'default',
   });
-  const raw = await AsyncStorage.getItem(PROTOCOL_KEY);
-  const routines: Routine[] = raw ? JSON.parse(raw) : [];
-  if (!Array.isArray(routines)) return;
   const now = new Date();
-  // Local, rolling 14-day window; refreshed when app is opened or protocols change.
+  const finalDates = new Map<string, string | null>();
+  for (const routine of routines) {
+    if (routine.reminderEnabled === true && routine.endReminderEnabled === true) {
+      finalDates.set(routine.id, finalScheduledDate(routine));
+    }
+  }
+  // Rolling 14-day window refreshed when Dashboard opens or protocols change.
   for (let offset = 0; offset < 14; offset++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, 12);
-    const weekday = (day.getDay() + 6) % 7;
     for (const routine of routines) {
-      if (!Array.isArray(routine.days) || !routine.days.includes(weekday) ||
-          !routine.time || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(routine.time) ||
-          (routine.startDate && routine.startDate > localKey(day))) continue;
+      if (routine.reminderEnabled !== true || !isScheduled(routine, day) || !routine.time) continue;
       const [hour, minute] = routine.time.split(':').map(Number);
       const when = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute);
       if (when.getTime() <= now.getTime() + 30000) continue;
+      const isFinal = routine.endReminderEnabled === true &&
+        !!endDate(routine) && finalDates.get(routine.id) === dateKey(day);
       await Notifications.scheduleNotificationAsync({
-        content: { title: 'Protocol', body: 'You have a scheduled activity.', sound: 'default', data: { screen: 'dashboard' } },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when, channelId: 'protocol-reminders' },
+        content: {
+          title: 'Protocol',
+          body: isFinal ? 'Your final scheduled activity is due.' : 'You have a scheduled activity.',
+          sound: 'default',
+          data: { screen: 'dashboard' },
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when, channelId: CHANNEL },
       });
     }
   }
-}
-
-export async function enableReminders(): Promise<boolean> {
-  if (Platform.OS !== 'android') return false;
-  const result = await Notifications.requestPermissionsAsync();
-  if (!result.granted) return false;
-  await AsyncStorage.setItem(REMINDER_KEY, 'true');
-  await syncReminders();
-  return true;
-}
-
-export async function disableReminders(): Promise<void> {
-  await AsyncStorage.setItem(REMINDER_KEY, 'false');
-  await Notifications.cancelAllScheduledNotificationsAsync();
 }
