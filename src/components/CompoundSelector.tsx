@@ -52,7 +52,7 @@ export default function CompoundSelector({visible,selected,onSelect,onClose}:Pro
  return <Modal visible={visible} animationType="slide" onRequestClose={exit}>
   <View style={styles.page}>
    <View style={styles.header}><Pressable onPress={()=>{if(condition)setCondition('');else if(category)setCategory('');else exit();}}><Ionicons name="arrow-back" size={25} color={theme.navy}/></Pressable><Text style={styles.title}>Choose compound</Text><Pressable onPress={exit}><Text style={styles.link}>Cancel</Text></Pressable></View>
-   <TextInput style={styles.search} placeholder="Search compounds, brands or conditions" value={query} onChangeText={setQuery} autoCorrect={false}/>
+   {category !== 'Manual Entry' && <TextInput style={styles.search} placeholder="Search compounds, brands or conditions" value={query} onChangeText={setQuery} autoCorrect={false}/> }
    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     {!category && !term ? <View style={styles.grid}>{categories.map(c=><Pressable key={c.name} style={styles.tile} onPress={()=>{if(c.name==='Manual Entry')setCategory('Manual Entry');else setCategory(c.name);}}><Ionicons name={c.icon} size={25} color={theme.teal}/><Text style={styles.tileTitle}>{c.name}</Text><Text style={styles.subtitle}>{c.subtitle}</Text></Pressable>)}</View> : null}
     {category==='Manual Entry' && !term ? <><Text style={styles.section}>Enter a compound or medication</Text><TextInput style={styles.search} value={manual} onChangeText={setManual} placeholder="Type a name" maxLength={100}/><Pressable style={[styles.primary,!manual.trim()&&styles.disabled]} disabled={!manual.trim()} onPress={()=>choose(manual.trim())}><Text style={styles.primaryText}>Use this name</Text></Pressable></> : null}
