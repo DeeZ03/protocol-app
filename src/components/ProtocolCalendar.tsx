@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, Animated, PanResponder } from 'react-native';
 import { theme } from '../theme';
+import { isScheduled } from '../protocolDates';
 
 type Protocol = { id: string; name: string; compound: string; days?: number[]; time?: string; startDate?: string };
 type Completion = { protocolId: string; date: string };
@@ -9,10 +10,7 @@ const key = (d: Date) => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, 
 const move = (d: Date, days: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + days, 12);
 const weekStart = (d: Date) => move(d, -((d.getDay() + 6) % 7));
 const monthMove = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1, 12);
-const scheduled = (p: Protocol, d: Date) =>
-  Array.isArray(p.days) && p.days.includes((d.getDay() + 6) % 7) &&
-  typeof p.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(p.time) &&
-  (!p.startDate || p.startDate <= key(d));
+const scheduled = (p: Protocol, d: Date) => isScheduled(p, d);
 
 export function ProtocolCalendar({ protocols, completions }: Props) {
   const [week, setWeek] = useState(() => weekStart(new Date()));
