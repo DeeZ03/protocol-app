@@ -3,13 +3,13 @@ import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Styl
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
-import { syncReminders } from '../../src/reminders';
+import { syncReminders, requestProtocolReminderPermission } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
 import { Ionicons } from '@expo/vector-icons';
 import CompoundSelector from '../../src/components/CompoundSelector';
 
-type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string };
+type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string; reminderEnabled?: boolean; endReminderEnabled?: boolean };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const validDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -40,9 +40,11 @@ export default function Protocols() {
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
   const [customEndDate, setCustomEndDate] = useState('');
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [endReminderEnabled, setEndReminderEnabled] = useState(false);
   const durationMode = customEndDate ? 'custom' : durationWeeks !== null ? 'weeks' : 'indefinite';
   const setMode = (mode: 'indefinite' | 'weeks' | 'custom') => {
-    if (mode === 'indefinite') { setDurationWeeks(null); setCustomEndDate(''); }
+    if (mode === 'indefinite') { setDurationWeeks(null); setCustomEndDate(''); setEndReminderEnabled(false); }
     if (mode === 'weeks') { setCustomEndDate(''); setDurationWeeks(current => current ?? 4); }
     if (mode === 'custom') { setDurationWeeks(null); setCustomEndDate(startDate || dateKey(new Date())); }
   };
@@ -87,6 +89,8 @@ export default function Protocols() {
     setStartDate(entry.startDate ?? '');
     setDurationWeeks(entry.durationWeeks ?? null);
     setCustomEndDate(entry.customEndDate ?? '');
+    setReminderEnabled(entry.reminderEnabled === true);
+    setEndReminderEnabled(entry.endReminderEnabled === true);
     setSelectedId(null);
     setEditing(true);
   };
@@ -102,6 +106,8 @@ export default function Protocols() {
     setStartDate('');
     setDurationWeeks(null);
     setCustomEndDate('');
+    setReminderEnabled(false);
+    setEndReminderEnabled(false);
   };
 
   const save = async () => {
@@ -125,6 +131,10 @@ export default function Protocols() {
       Alert.alert('Check end date', 'Choose an end date on or after the start date.');
       return;
     }
+    if (reminderEnabled && (days.length === 0 || !time)) {
+      Alert.alert('Choose a schedule', 'Select scheduled days and a time before enabling reminders.');
+      return;
+    }
     if (saving) return;
     setSaving(true);
     const existing = editingId ? items.find(item => item.id === editingId) : undefined;
@@ -132,6 +142,20 @@ export default function Protocols() {
       Alert.alert('Not found', 'This protocol is no longer available.');
       setSaving(false);
       return;
+    }
+    if (reminderEnabled) {
+      try {
+        const granted = await requestProtocolReminderPermission();
+        if (!granted) {
+          Alert.alert('Notifications not enabled', 'Allow notifications in Android settings, or switch off reminders to save this protocol.');
+          setSaving(false);
+          return;
+        }
+      } catch {
+        Alert.alert('Notification permission', 'Could not check notification permission. Try again or switch off reminders.');
+        setSaving(false);
+        return;
+      }
     }
     const entry: Protocol = {
       id: existing?.id ?? (Date.now().toString() + '-' + Math.random().toString(36).slice(2)),
@@ -143,6 +167,8 @@ export default function Protocols() {
       startDate: startDate.trim(),
       durationWeeks,
       customEndDate,
+      reminderEnabled,
+      endReminderEnabled: reminderEnabled && durationMode !== 'indefinite' && endReminderEnabled,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     const next = existing ? items.map(item => item.id === existing.id ? entry : item) : [entry, ...items];
@@ -182,7 +208,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setEditing(true); }}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setReminderEnabled(false); setEndReminderEnabled(false); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -230,6 +256,8 @@ export default function Protocols() {
                 <Text style={styles.detailsLabel}>DURATION</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.customEndDate ? 'Custom end date' : selectedProtocol.durationWeeks ? selectedProtocol.durationWeeks + (selectedProtocol.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
                 {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>Ends: {endDate(selectedProtocol)}{'\n'}Last scheduled: {finalScheduledDate(selectedProtocol) ?? 'None'}</Text>}
+                <Text style={styles.detailsLabel}>REMINDERS</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.reminderEnabled === true ? 'On' : 'Off'}{selectedProtocol.reminderEnabled === true && selectedProtocol.endReminderEnabled === true ? ' · Final activity alert on' : ''}</Text>
                 <Text style={styles.detailsLabel}>SCHEDULE NOTES</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || 'No notes added'}</Text>
               </>}
@@ -295,6 +323,25 @@ export default function Protocols() {
           </Pressable>}
           {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks, customEndDate})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? 'none selected'}.</Text>}
           {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>Choose a start date for a fixed duration.</Text>}
+          <View style={styles.reminderCard}>
+            <Pressable accessibilityRole="switch" accessibilityState={{checked: reminderEnabled}} style={styles.reminderRow} onPress={() => { setReminderEnabled(v => !v); if (reminderEnabled) setEndReminderEnabled(false); }}>
+              <View style={{flex:1}}>
+                <Text style={styles.reminderTitle}>Activity reminders</Text>
+                <Text style={styles.reminderHelp}>Discreet Android alerts at your selected days and time. Off by default.</Text>
+              </View>
+              <Ionicons name={reminderEnabled ? 'checkbox' : 'square-outline'} size={29} color={reminderEnabled ? theme.teal : theme.slate}/>
+            </Pressable>
+            {reminderEnabled && <>
+              <Text style={styles.reminderHelp}>Android notification permission is requested when you save.</Text>
+              {durationMode !== 'indefinite' && <Pressable accessibilityRole="switch" accessibilityState={{checked: endReminderEnabled}} style={styles.reminderRow} onPress={() => setEndReminderEnabled(v => !v)}>
+                <View style={{flex:1}}>
+                  <Text style={styles.reminderTitle}>Final activity notification</Text>
+                  <Text style={styles.reminderHelp}>Use a different notification message on the last scheduled activity.</Text>
+                </View>
+                <Ionicons name={endReminderEnabled ? 'checkbox' : 'square-outline'} size={29} color={endReminderEnabled ? theme.teal : theme.slate}/>
+              </Pressable>}
+            </>}
+          </View>
           <Text style={styles.label}>Schedule notes (optional)</Text>
           <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} onFocus={scrollToNotes} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
@@ -379,5 +426,9 @@ const styles = StyleSheet.create({
   detailsActions: { flexDirection:'row',gap:12,paddingTop:20 },
   detailsEdit: { flex:1,backgroundColor:theme.navy,borderRadius:12,padding:14,flexDirection:'row',justifyContent:'center',alignItems:'center',gap:8 },
   detailsDelete: { borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:20,flexDirection:'row',alignItems:'center',gap:7 },
+  reminderCard: { borderWidth:1,borderColor:theme.border,backgroundColor:theme.white,borderRadius:12,padding:14,marginBottom:22 },
+  reminderRow: { flexDirection:'row',alignItems:'center',gap:12,paddingVertical:8 },
+  reminderTitle: { color:theme.navy,fontSize:15,fontWeight:'700',marginBottom:4 },
+  reminderHelp: { color:theme.slate,fontSize:12,lineHeight:18,marginBottom:6 },
   disabled: { opacity: 0.5 },
 });
