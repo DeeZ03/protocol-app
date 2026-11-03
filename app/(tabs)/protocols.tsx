@@ -7,7 +7,7 @@ import { syncReminders } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
 
-type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null };
+type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const validDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -29,6 +29,20 @@ export default function Protocols() {
   const [time, setTime] = useState('');
   const [startDate, setStartDate] = useState('');
   const [durationWeeks, setDurationWeeks] = useState<number | null>(null);
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [weekPickerOpen, setWeekPickerOpen] = useState(false);
+  const durationMode = customEndDate ? 'custom' : durationWeeks !== null ? 'weeks' : 'indefinite';
+  const setMode = (mode: 'indefinite' | 'weeks' | 'custom') => {
+    if (mode === 'indefinite') { setDurationWeeks(null); setCustomEndDate(''); }
+    if (mode === 'weeks') { setCustomEndDate(''); setDurationWeeks(current => current ?? 4); }
+    if (mode === 'custom') { setDurationWeeks(null); setCustomEndDate(startDate || dateKey(new Date())); }
+  };
+  const openEndDatePicker = () => {
+    const value = validDate(customEndDate) ? new Date(customEndDate + 'T12:00:00') : new Date();
+    DateTimePickerAndroid.open({ value, mode: 'date', onChange: (event, selected) => {
+      if (event.type === 'set' && selected) setCustomEndDate(dateKey(selected));
+    }});
+  };
   const openTimePicker = () => {
     const [h, m] = /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time.split(':').map(Number) : [9, 0];
     const value = new Date(); value.setHours(h, m, 0, 0);
@@ -63,6 +77,7 @@ export default function Protocols() {
     setTime(entry.time ?? '');
     setStartDate(entry.startDate ?? '');
     setDurationWeeks(entry.durationWeeks ?? null);
+    setCustomEndDate(entry.customEndDate ?? '');
     setEditing(true);
   };
 
@@ -76,6 +91,7 @@ export default function Protocols() {
     setTime('');
     setStartDate('');
     setDurationWeeks(null);
+    setCustomEndDate('');
   };
 
   const save = async () => {
@@ -91,8 +107,12 @@ export default function Protocols() {
       Alert.alert('Check start date', 'Enter a valid date as YYYY-MM-DD, for example 2026-11-02.');
       return;
     }
-    if (durationWeeks !== null && !startDate) {
+    if ((durationWeeks !== null || !!customEndDate) && !startDate) {
       Alert.alert('Choose a start date', 'A fixed-duration protocol needs a start date.');
+      return;
+    }
+    if (customEndDate && (!validDate(customEndDate) || customEndDate < startDate)) {
+      Alert.alert('Check end date', 'Choose an end date on or after the start date.');
       return;
     }
     if (saving) return;
@@ -112,6 +132,7 @@ export default function Protocols() {
       time: days.length ? time.trim() : '',
       startDate: startDate.trim(),
       durationWeeks,
+      customEndDate,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     const next = existing ? items.map(item => item.id === existing.id ? entry : item) : [entry, ...items];
@@ -150,7 +171,7 @@ export default function Protocols() {
           <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
-        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setEditing(true); }}>
+        <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setEditing(true); }}>
           <Text style={styles.addText}>+ Add</Text>
         </Pressable>
       </View>
@@ -182,7 +203,7 @@ export default function Protocols() {
             <Text style={styles.detail}>Notes: {item.schedule}</Text>
             {item.days && item.days.length > 0 && <Text style={styles.detail}>Days: {item.days.map(day => DAYS[day]).join(', ')} at {item.time}</Text>}
             {!!item.startDate && <Text style={styles.detail}>Start date: {item.startDate}</Text>}
-            <Text style={styles.detail}>Duration: {item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
+            <Text style={styles.detail}>Duration: {item.customEndDate ? 'Custom end date' : item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
             {!!endDate(item) && <Text style={styles.detail}>Ends: {endDate(item)} · Last scheduled: {finalScheduledDate(item) ?? 'None'}</Text>}
           </View>
         )}
@@ -216,14 +237,21 @@ export default function Protocols() {
           <Pressable accessibilityRole="button" style={styles.input} onPress={openDatePicker}><Text style={styles.pickerText}>{startDate || 'Choose start date'}</Text></Pressable>
           {!!startDate && <Pressable onPress={() => setStartDate('')}><Text style={styles.clearText}>Clear start date</Text></Pressable>}
           <Text style={styles.label}>Duration</Text>
-          <View style={styles.durationRow}>
-            {[null, ...Array.from({ length: 12 }, (_, i) => i + 1)].map(weeks => (
-              <Pressable key={weeks ?? 'indefinite'} accessibilityRole="button" accessibilityState={{ selected: durationWeeks === weeks }} style={[styles.durationButton, durationWeeks === weeks && styles.daySelected]} onPress={() => setDurationWeeks(weeks)}>
-                <Text style={[styles.dayText, durationWeeks === weeks && styles.daySelectedText]}>{weeks === null ? 'Indefinitely' : weeks + (weeks === 1 ? ' week' : ' weeks')}</Text>
+          <View style={styles.modeRow}>
+            {([['indefinite', 'Indefinitely'], ['weeks', 'Fixed weeks'], ['custom', 'End date']] as const).map(([mode, label]) => (
+              <Pressable key={mode} accessibilityRole="radio" accessibilityState={{ checked: durationMode === mode }} style={[styles.modeButton, durationMode === mode && styles.daySelected]} onPress={() => setMode(mode)}>
+                <Text style={[styles.dayText, durationMode === mode && styles.daySelectedText]}>{label}</Text>
               </Pressable>
             ))}
           </View>
-          {durationWeeks !== null && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, days, time}) ?? 'none selected'}.</Text>}
+          {durationMode === 'weeks' && <Pressable accessibilityRole="button" style={styles.input} onPress={() => setWeekPickerOpen(true)}>
+            <Text style={styles.pickerText}>{durationWeeks} {durationWeeks === 1 ? 'week' : 'weeks'}  ▾</Text>
+          </Pressable>}
+          {durationMode === 'custom' && <Pressable accessibilityRole="button" style={styles.input} onPress={openEndDatePicker}>
+            <Text style={styles.pickerText}>Ends: {customEndDate}</Text>
+          </Pressable>}
+          {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks, customEndDate})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? 'none selected'}.</Text>}
+          {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>Choose a start date for a fixed duration.</Text>}
           <Text style={styles.label}>Schedule notes</Text>
           <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} multiline maxLength={250} />
           <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
@@ -232,6 +260,20 @@ export default function Protocols() {
           </Pressable>
           </ScrollView>
         </KeyboardAvoidingView>
+      </Modal>
+      <Modal visible={weekPickerOpen} transparent animationType="fade" onRequestClose={() => setWeekPickerOpen(false)}>
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerSheet}>
+            <View style={styles.pickerHeader}><Text style={styles.cardTitle}>Select duration</Text><Pressable onPress={() => setWeekPickerOpen(false)}><Text style={styles.cancel}>Close</Text></Pressable></View>
+            <ScrollView style={styles.weekList}>
+              {Array.from({ length: 52 }, (_, i) => i + 1).map(weeks => (
+                <Pressable key={weeks} accessibilityRole="button" style={[styles.weekOption, durationWeeks === weeks && styles.weekSelected]} onPress={() => { setDurationWeeks(weeks); setWeekPickerOpen(false); }}>
+                  <Text style={styles.pickerText}>{weeks} {weeks === 1 ? 'week' : 'weeks'}{durationWeeks === weeks ? '  ✓' : ''}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -270,8 +312,14 @@ const styles = StyleSheet.create({
   multiline: { minHeight: 90, textAlignVertical: 'top' },
   pickerText: { fontSize: 16, color: theme.text },
   clearText: { color: theme.teal, fontWeight: '700', marginTop: -12, marginBottom: 20 },
-  durationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  durationButton: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: theme.white },
+  modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  modeButton: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: theme.white },
+  pickerOverlay: { flex: 1, backgroundColor: '#0008', justifyContent: 'center', padding: 24 },
+  pickerSheet: { backgroundColor: theme.white, borderRadius: 16, padding: 18, maxHeight: '75%' },
+  pickerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  weekList: { flexGrow: 0 },
+  weekOption: { padding: 14, borderBottomWidth: 1, borderBottomColor: theme.border },
+  weekSelected: { backgroundColor: theme.background },
   help: { fontSize: 13, color: theme.muted, lineHeight: 20, marginBottom: 22 },
   saveButton: { backgroundColor: theme.navy, borderRadius: 12, padding: 16, alignItems: 'center' },
   saveText: { color: theme.white, fontWeight: '700', fontSize: 16 },
