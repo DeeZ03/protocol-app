@@ -5,7 +5,8 @@ import { dateKey, endDate, finalScheduledDate, isScheduled, ScheduledProtocol } 
 
 const PROTOCOL_KEY = 'protocol-app:test-protocols:v1';
 const CHANNEL = 'protocol-reminders';
-type Routine = ScheduledProtocol & { id: string; reminderEnabled?: boolean; endReminderEnabled?: boolean };
+const PROMINENT_CHANNEL = 'protocol-prominent-v1';
+type Routine = ScheduledProtocol & { id: string; reminderEnabled?: boolean; endReminderEnabled?: boolean; alertMode?: 'standard' | 'prominent' };
 
 export async function requestProtocolReminderPermission(): Promise<boolean> {
   if (Platform.OS !== 'android') return false;
@@ -28,6 +29,12 @@ export async function syncReminders(): Promise<void> {
     name: 'Protocol reminders',
     importance: Notifications.AndroidImportance.DEFAULT,
     sound: 'default',
+  });
+  await Notifications.setNotificationChannelAsync(PROMINENT_CHANNEL, {
+    name: 'Prominent protocol alerts',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'default',
+    vibrationPattern: [0, 300, 200, 300],
   });
   const now = new Date();
   const finalDates = new Map<string, string | null>();
@@ -53,7 +60,7 @@ export async function syncReminders(): Promise<void> {
           sound: 'default',
           data: { screen: 'dashboard', protocolId: routine.id },
         },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when, channelId: CHANNEL },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when, channelId: routine.alertMode === 'prominent' ? PROMINENT_CHANNEL : CHANNEL },
       });
     }
   }
