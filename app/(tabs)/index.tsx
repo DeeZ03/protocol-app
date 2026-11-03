@@ -4,19 +4,15 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
-import { REMINDER_KEY, syncReminders, enableReminders, disableReminders } from '../../src/reminders';
+import { syncReminders } from '../../src/reminders';
+import { isScheduled } from '../../src/protocolDates';
 
 type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string };
 type Completion = { protocolId: string; date: string; completedAt: string; name: string; time: string };
 const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 const COMPLETIONS_KEY = 'protocol-app:completions:v1';
 const localDate = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
-const scheduledToday = (item: Protocol, date: Date) =>
-  Array.isArray(item.days) &&
-  item.days.includes((date.getDay() + 6) % 7) &&
-  typeof item.time === 'string' &&
-  /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time) &&
-  (!item.startDate || item.startDate <= localDate(date));
+const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 
 export default function Dashboard() {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
@@ -24,8 +20,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [remindersOn, setRemindersOn] = useState(false);
-  const [reminderBusy, setReminderBusy] = useState(false);
   const [today, setToday] = useState(() => new Date());
   const router = useRouter();
 
@@ -34,7 +28,6 @@ export default function Dashboard() {
     setLoading(true);
     setError(false);
     setToday(new Date());
-    AsyncStorage.getItem(REMINDER_KEY).then(v => { if (active) setRemindersOn(v === 'true'); }).catch(() => {});
     syncReminders().catch(() => {});
     Promise.all([AsyncStorage.getItem(STORAGE_KEY), AsyncStorage.getItem(COMPLETIONS_KEY)])
       .then(([records, history]) => {
@@ -50,19 +43,6 @@ export default function Dashboard() {
     return () => { active = false; };
   }, []));
 
-  const toggleReminders = async () => {
-    if (reminderBusy) return;
-    setReminderBusy(true);
-    try {
-      if (remindersOn) { await disableReminders(); setRemindersOn(false); }
-      else {
-        const allowed = await enableReminders();
-        setRemindersOn(allowed);
-        if (!allowed) Alert.alert('Notifications disabled', 'Allow notifications in Android settings to enable reminders.');
-      }
-    } catch { Alert.alert('Reminder error', 'Unable to update reminders. Please try again.'); }
-    finally { setReminderBusy(false); }
-  };
   const dateKey = localDate(today);
   const dueToday = protocols.filter(item => scheduledToday(item, today)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   const completedToday = dueToday.filter(item => completions.some(entry => entry.protocolId === item.id && entry.date === dateKey)).length;
@@ -100,13 +80,6 @@ export default function Dashboard() {
       <Text style={styles.eyebrow}>PROTOCOL / OVERVIEW</Text>
       <Text style={styles.heading}>Your day, organised.</Text>
       <Text style={styles.subtitle}>A clear space for tracking your health routines.</Text>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Discreet reminders</Text>
-        <Text style={styles.muted}>Optional local notifications. No compound names are shown. Upcoming reminders refresh when you open Protocol.</Text>
-        <Pressable accessibilityRole="switch" accessibilityState={{ checked: remindersOn }} disabled={reminderBusy} onPress={toggleReminders} style={[styles.completionButton, { alignSelf: 'flex-start', marginTop: 14 }]}>
-          <Text style={styles.completionText}>{reminderBusy ? 'Updating...' : remindersOn ? 'Reminders ON · Tap to disable' : 'Reminders OFF · Tap to enable'}</Text>
-        </Pressable>
-      </View>
       <View style={styles.card}>
         <ProtocolCalendar protocols={protocols} completions={completions} />
       </View>
