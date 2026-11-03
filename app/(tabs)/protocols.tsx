@@ -232,9 +232,8 @@ export default function Protocols() {
               <Text style={styles.cardTitle}>{item.name}</Text>
               <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
             </View>
-            <Text style={styles.detail}>{item.compound}</Text>
-            {item.days && item.days.length > 0 && <Text style={styles.detail}>{item.days.map(day => DAYS[day]).join(', ')} at {item.time}</Text>}
-            <Text style={styles.detail}>{item.customEndDate ? 'Custom end date' : item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
+            <Text style={styles.detail} numberOfLines={1}>{item.compound}</Text>
+            <Text style={styles.cardMeta} numberOfLines={1}>{item.days?.length ? item.days.map(day => DAYS[day]).join(', ') + ' · ' + (item.time || 'No time') : 'No scheduled days'}  ·  {item.customEndDate ? 'Until ' + item.customEndDate : item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
           </Pressable>
         )}
         ListFooterComponent={<Text style={styles.disclaimer}>Prototype for testing only. Do not enter sensitive personal health information. No medical advice or dosing recommendations are provided. Records are stored on this device and are not synced or backed up.</Text>}
@@ -395,10 +394,11 @@ const styles = StyleSheet.create({
   intro: { color: theme.slate, marginTop: 12, marginBottom: 18, fontSize: 15 },
   list: { paddingBottom: 40, flexGrow: 1 },
   emptyCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, padding: 22 },
-  card: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, padding: 18, marginBottom: 12 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 9 },
+  card: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 9 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 2 },
   cardTitle: { color: theme.navy, fontWeight: '700', fontSize: 18, flexShrink: 1 },
   detail: { color: theme.slate, fontSize: 14, lineHeight: 22, marginTop: 3 },
+  cardMeta: { color: theme.muted, fontSize: 12, marginTop: 5 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   edit: { color: theme.teal, fontWeight: '700' },
   delete: { color: '#B42318', fontWeight: '600' },
