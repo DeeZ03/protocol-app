@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
@@ -22,6 +22,8 @@ export default function Dashboard() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [today, setToday] = useState(() => new Date());
   const router = useRouter();
+  const { highlight } = useLocalSearchParams<{ highlight?: string }>();
+  const highlightedId = typeof highlight === 'string' ? highlight : '';
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -83,7 +85,7 @@ export default function Dashboard() {
       <View style={styles.card}>
         <ProtocolCalendar protocols={protocols} completions={completions} />
       </View>
-      <View style={styles.card}>
+      <View style={[styles.card, highlightedId && dueToday.some(item => item.id === highlightedId) && styles.highlightedCard]}>
         <Text style={styles.cardTitle}>Scheduled today</Text>
         <Text style={styles.muted}>{today.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
         {!loading && !error && dueToday.length > 0 && (
@@ -95,7 +97,7 @@ export default function Dashboard() {
           dueToday.map(item => {
             const completed = completions.some(entry => entry.protocolId === item.id && entry.date === dateKey);
             return (
-              <View style={[styles.protocolRow, styles.scheduledRow]} key={item.id}>
+              <View style={[styles.protocolRow, styles.scheduledRow, item.id === highlightedId && styles.highlightedRow]} key={item.id}>
                 <Text style={styles.scheduleTime}>{item.time}</Text>
                 <View style={styles.scheduleDetails}>
                   <Text style={styles.protocolName}>{item.name}</Text>
@@ -169,6 +171,8 @@ const styles = StyleSheet.create({
   progress: { color: theme.teal, fontWeight: '800', fontSize: 17, marginTop: 14 },
   count: { fontSize: 38, fontWeight: '800', color: theme.navy },
   protocolRow: { borderTopWidth: 1, borderTopColor: theme.border, paddingVertical: 12 },
+  highlightedCard: { borderColor: theme.teal, borderWidth: 2 },
+  highlightedRow: { backgroundColor: '#E8F7F7', borderRadius: 10, paddingHorizontal: 8 },
   protocolName: { fontSize: 16, fontWeight: '700', color: theme.navy },
   muted: { color: theme.muted, fontSize: 13, lineHeight: 19, marginTop: 5 },
   button: { backgroundColor: theme.navy, borderRadius: 10, padding: 13, alignItems: 'center', marginTop: 16 },
