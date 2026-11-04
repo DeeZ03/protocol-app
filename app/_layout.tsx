@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { theme } from '../src/theme';
+import { LanguageProvider } from '../src/i18n';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -19,5 +20,5 @@ export default function RootLayout() {
     }).catch(() => {});
     return () => subscription.remove();
   }, [router]);
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }} />;
+  return <LanguageProvider><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }} /></LanguageProvider>;
 }
