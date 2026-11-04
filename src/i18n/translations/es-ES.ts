@@ -13,5 +13,4 @@ export const esES: Record<keyof typeof import('./en-GB').enGB, string> = {
     'health.arms':'Brazos','health.thighs':'Muslos','health.calves':'Pantorrillas',
     'health.weight':'Peso','health.bloodPressure':'Presión arterial','health.heart':'Frecuencia cardíaca en reposo','health.steps':'Pasos diarios',
     'health.bodyFat':'Grasa corporal','health.sleep':'Duración del sueño',
-  },
-};
+  };
