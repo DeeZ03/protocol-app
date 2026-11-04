@@ -1,4 +1,4 @@
-import Svg, { Circle, Line, Polyline } from 'react-native-svg';
+import Svg, { Circle, Line, Polyline, Ellipse, Rect } from 'react-native-svg';
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Keyboard } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -15,6 +15,14 @@ const MARKERS = [
  {key:'heart',name:'Resting heart rate',unit:'bpm',hint:'e.g. 65'},
  {key:'bodyfat',name:'Body fat',unit:'%',hint:'e.g. 22'},
  {key:'waist',name:'Waist circumference',unit:'cm',hint:'e.g. 85'},
+ {key:'neck',name:'Neck',unit:'cm',hint:'e.g. 38'},
+ {key:'chest',name:'Chest',unit:'cm',hint:'e.g. 100'},
+ {key:'hips',name:'Hips',unit:'cm',hint:'e.g. 100'},
+ {key:'glutes',name:'Glutes',unit:'cm',hint:'e.g. 100'},
+ {key:'armLeft',name:'Left upper arm',unit:'cm',hint:'e.g. 35'},
+ {key:'armRight',name:'Right upper arm',unit:'cm',hint:'e.g. 35'},
+ {key:'thighLeft',name:'Left thigh',unit:'cm',hint:'e.g. 55'},
+ {key:'thighRight',name:'Right thigh',unit:'cm',hint:'e.g. 55'},
  {key:'steps',name:'Daily steps',unit:'steps',hint:'e.g. 8000'},
  {key:'sleep',name:'Sleep duration',unit:'hours',hint:'e.g. 7.5'},
 ] as const;
@@ -22,6 +30,8 @@ type Marker = typeof MARKERS[number]['key'];
 type RecordItem = {id:string;marker:Marker;value:number;date:string;note:string;time?:string};
 const dateKey=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const titleFor=(key:Marker)=>MARKERS.find(m=>m.key===key)!;
+const BODY_MARKERS:Marker[]=['neck','chest','waist','hips','glutes','armLeft','armRight','thighLeft','thighRight'];
+const isCircumference=(m:Marker)=>BODY_MARKERS.includes(m);
 export default function Health(){
  const insets=useSafeAreaInsets();
  const [items,setItems]=useState<RecordItem[]>([]);
@@ -37,9 +47,10 @@ export default function Health(){
  const [weightUnit,setWeightUnit]=useState<'kg'|'lb'|'st'>('kg');
  const [waistUnit,setWaistUnit]=useState<'cm'|'in'>('cm');
  const [unitsOpen,setUnitsOpen]=useState(false);
+ const [bodyDiagram,setBodyDiagram]=useState<'male'|'female'>('male');
  const [healthSection,setHealthSection]=useState<'overview'|'measurements'|'metrics'|'activity'>('overview');
- const unitFor=(m:Marker)=>m==='weight'?weightUnit==='st'?'st & lb':weightUnit:m==='waist'?waistUnit==='in'?'in':'cm':titleFor(m).unit;
- const display=(m:Marker,v:number)=>m==='weight'?(weightUnit==='lb'?(v*2.20462262).toFixed(1):weightUnit==='st'?`${Math.floor(Math.round(v*2.20462262*10)/10/14)} st ${(Math.round(v*2.20462262*10)/10%14).toFixed(1)} lb`:v.toFixed(1)):m==='waist'&&waistUnit==='in'?(v/2.54).toFixed(1):String(v);
+ const unitFor=(m:Marker)=>m==='weight'?weightUnit==='st'?'st & lb':weightUnit:isCircumference(m)?waistUnit==='in'?'in':'cm':titleFor(m).unit;
+ const display=(m:Marker,v:number)=>m==='weight'?(weightUnit==='lb'?(v*2.20462262).toFixed(1):weightUnit==='st'?`${Math.floor(Math.round(v*2.20462262*10)/10/14)} st ${(Math.round(v*2.20462262*10)/10%14).toFixed(1)} lb`:v.toFixed(1)):isCircumference(m)&&waistUnit==='in'?(v/2.54).toFixed(1):String(v);
  const displayChange=(m:Marker,v:number)=>m==='weight'&&weightUnit==='st'?`${(v*2.20462262).toFixed(1)} lb`: `${display(m,v)} ${m==='weight'&&weightUnit==='st'?'':unitFor(m)}`;
  const dateFiltered=(m:Marker)=>{const now=Date.now();const days=range==='7D'?7:range==='30D'?30:range==='90D'?90:Infinity;return items.filter(i=>i.marker===m&&(days===Infinity||(new Date(i.date+'T12:00:00').getTime()<=now&&now-new Date(i.date+'T12:00:00').getTime()<=days*86400000))).sort((a,b)=>a.date.localeCompare(b.date));};
  const dailyPoints=(m:Marker)=>{
@@ -63,7 +74,7 @@ export default function Health(){
   let num=Number(value.trim().replace(',','.'));
   if(marker==='weight'&&weightUnit==='lb')num/=2.20462262;
   if(marker==='weight'&&weightUnit==='st')num=(num*14+Number(secondValue.replace(',','.')||0))/2.20462262;
-  if(marker==='waist'&&waistUnit==='in')num*=2.54;
+  if(isCircumference(marker)&&waistUnit==='in')num*=2.54;
   if(marker==='weight'&&weightUnit==='st'&&(!Number.isFinite(Number(secondValue.replace(',','.')||0))||Number(secondValue||0)<0||Number(secondValue||0)>=14)){Alert.alert('Check pounds','Enter pounds between 0 and 13.9.');return;}
   const bpOther=Number(secondValue.trim().replace(',','.'));
   if(marker==='systolic'&&(!secondValue.trim()||!Number.isFinite(bpOther)||bpOther<=0||bpOther>300)){Alert.alert('Check blood pressure','Enter both systolic and diastolic values.');return;}
@@ -72,7 +83,7 @@ export default function Health(){
   const rawPrimary=Number(value.trim().replace(',','.'));
   const unusual:string[]=[];
   if(marker==='weight'&&(num<20||num>350))unusual.push('weight');
-  if(marker==='waist'&&(num<35||num>250))unusual.push('waist circumference');
+  if(isCircumference(marker)&&(num<15||num>250))unusual.push(titleFor(marker).name.toLowerCase());
   if(marker==='bodyfat'&&(num<2||num>70))unusual.push('body fat percentage');
   if(marker==='heart'&&(num<30||num>150))unusual.push('resting heart rate');
   if(marker==='sleep'&&num>16)unusual.push('sleep duration');
@@ -80,7 +91,7 @@ export default function Health(){
   if(marker==='systolic'&&(num<70||num>250||bpOther<40||bpOther>150||num<=bpOther))unusual.push('blood pressure');
   if(marker==='weight'&&weightUnit==='st'&&!Number.isInteger(rawPrimary)){Alert.alert('Check stones','Enter whole stones and put the remaining pounds in the second field.');return;}
   const entryDate=dateKey(new Date());
-  const singleDaily=['weight','bodyfat','waist','steps','sleep'].includes(marker);
+  const singleDaily=(['weight','bodyfat','steps','sleep'] as Marker[]).includes(marker)||isCircumference(marker);
   const existing=singleDaily?items.filter(i=>i.date===entryDate&&i.marker===marker):[];
   const persist=async()=>{
    setSaving(true);
@@ -114,8 +125,24 @@ export default function Health(){
       <View style={styles.overviewPanel}><View style={styles.grid}>{(['weight','systolic','heart','steps'] as Marker[]).map(key=>{const readings=items.filter(i=>i.marker===key).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));const latest=readings[0];const previous=readings.find(i=>i.date!==latest?.date);return <Pressable key={key} accessibilityRole="button" onPress={()=>setDetail(key)} style={styles.tile}><Text style={styles.tileTitle}>{titleFor(key).name}</Text><Text style={styles.tileValue}>{latest?(key==='systolic'?String(latest.value)+'/'+String(bpLatest(latest)?.value??'—'):display(key,latest.value)):'—'} <Text style={styles.unit}>{latest&&!(key==='weight'&&weightUnit==='st')?unitFor(key):''}</Text></Text><Text style={styles.small}>{latest?latest.date:'No entries yet'}</Text>{latest&&previous&&key!=='systolic'&&<Text style={styles.trend}>{latest.value===previous.value?'→ No change':(latest.value>previous.value?'↑ ':'↓ ')+displayChange(key,Math.abs(latest.value-previous.value))}</Text>}</Pressable>})}</View></View>
       {([{key:'measurements',title:'Body measurements',description:'Waist, chest, hips, arms, thighs and more',symbol:'◎'},{key:'metrics',title:'Body composition',description:'Body fat and future visceral fat tracking',symbol:'◇'},{key:'activity',title:'Sleep & activity',description:'Sleep and daily steps',symbol:'☾'}] as const).map(section=><Pressable key={section.key} accessibilityRole="button" style={styles.featureRow} onPress={()=>setHealthSection(section.key)}><View style={styles.featureIcon}><Text style={styles.featureEmoji}>{section.symbol}</Text></View><View style={{flex:1}}><Text style={styles.featureTitle}>{section.title}</Text><Text style={styles.featureDescription}>{section.description}</Text></View><Text style={styles.chevron}>›</Text></Pressable>)}
     </>:<>
-      <Text style={styles.panelSubtitle}>{healthSection==='measurements'?'Waist tracking is available now. More measurement points and anatomical diagrams are planned.':healthSection==='metrics'?'Review body composition readings and their history.':'Review sleep and activity trends.'}</Text>
-      {(healthSection==='measurements'?['waist']:healthSection==='metrics'?['bodyfat']:['sleep','steps']).map(key=>{const m=key as Marker;const latest=items.filter(i=>i.marker===m).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id))[0];return <Pressable key={key} accessibilityRole="button" style={styles.featureRow} onPress={()=>setDetail(m)}><View style={{flex:1}}><Text style={styles.featureTitle}>{titleFor(m).name}</Text><Text style={styles.featureDescription}>{latest?display(m,latest.value)+' '+unitFor(m)+' · '+latest.date:'No readings yet'}</Text></View><Text style={styles.chevron}>›</Text></Pressable>})}
+      <Text style={styles.panelSubtitle}>{healthSection==='measurements'?'Choose a measuring point on the diagram or select it from the list. Measure consistently at the same location.':healthSection==='metrics'?'Review body composition readings and their history.':'Review sleep and activity trends.'}</Text>
+      {healthSection==='measurements'&&<View style={styles.diagramCard}>
+        <View style={styles.diagramSwitch}>{(['male','female'] as const).map(shape=><Pressable key={shape} accessibilityRole="button" accessibilityState={{selected:bodyDiagram===shape}} onPress={()=>setBodyDiagram(shape)} style={[styles.diagramChoice,bodyDiagram===shape&&styles.selected]}><Text style={[styles.optionText,bodyDiagram===shape&&styles.selectedText]}>{shape==='male'?'Male diagram':'Female diagram'}</Text></Pressable>)}</View>
+        <Text style={styles.diagramHint}>Tap a highlighted point to record or review measurements.</Text>
+        <View style={styles.figureRow}>{(['Front','Back'] as const).map(side=><View key={side} style={styles.figureColumn}><Text style={styles.figureLabel}>{side}</Text><Svg viewBox="0 0 150 300" width="100%" height={290}>
+          <Ellipse cx="75" cy="24" rx={bodyDiagram==='female'?17:16} ry="22" stroke={theme.navy} fill="#EAF4F6" strokeWidth="2"/>
+          <Line x1="75" y1="46" x2="75" y2="59" stroke={theme.navy} strokeWidth="8"/>
+          <Polyline points={bodyDiagram==='female'?'55,58 38,75 43,124 50,160 43,184 54,193 96,193 107,184 100,160 107,124 112,75 95,58 55,58':'55,58 30,73 44,128 50,160 43,185 54,193 96,193 107,185 100,160 106,128 120,73 95,58 55,58'} stroke={theme.navy} strokeWidth="2" fill="#EAF4F6"/>
+          <Polyline points="38,75 20,131 12,175 20,181 28,170 38,135" fill="none" stroke={theme.navy} strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+          <Polyline points="112,75 130,131 138,175 130,181 122,170 112,135" fill="none" stroke={theme.navy} strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+          <Polyline points="55,192 52,230 49,278 60,286 69,277 73,223 75,195 77,223 81,277 90,286 101,278 98,230 95,192" fill="#EAF4F6" stroke={theme.navy} strokeWidth="2"/>
+          {(side==='Front'?[{m:'neck',x:75,y:52},{m:'chest',x:75,y:100},{m:'waist',x:75,y:146},{m:'hips',x:75,y:179},{m:'armLeft',x:27,y:119},{m:'armRight',x:123,y:119},{m:'thighLeft',x:58,y:223},{m:'thighRight',x:92,y:223}]:[{m:'glutes',x:75,y:186}]).map(p=><Circle key={p.m} cx={p.x} cy={p.y} r="7" fill={theme.teal} stroke="white" strokeWidth="2"/>)}
+        </Svg>
+        <View style={styles.figureHotspots}>{(side==='Front'?[{m:'neck',top:'13%',left:'44%'},{m:'chest',top:'29%',left:'44%'},{m:'waist',top:'44%',left:'44%'},{m:'hips',top:'55%',left:'44%'},{m:'armLeft',top:'35%',left:'12%'},{m:'armRight',top:'35%',left:'77%'},{m:'thighLeft',top:'70%',left:'33%'},{m:'thighRight',top:'70%',left:'57%'}]:[{m:'glutes',top:'57%',left:'44%'}]).map(p=><Pressable key={p.m} accessibilityRole="button" accessibilityLabel={'View '+titleFor(p.m as Marker).name} onPress={()=>setDetail(p.m as Marker)} style={[styles.hotspot,{top:p.top as any,left:p.left as any}]}/>)}</View>
+        </View>)}</View>
+        <Text style={styles.diagramHint}>Illustrative guide only. The diagram selection is temporary and does not change your health data.</Text>
+      </View>}
+      {(healthSection==='measurements'?BODY_MARKERS:healthSection==='metrics'?['bodyfat']:['sleep','steps']).map(key=>{const m=key as Marker;const latest=items.filter(i=>i.marker===m).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id))[0];return <Pressable key={key} accessibilityRole="button" style={styles.featureRow} onPress={()=>setDetail(m)}><View style={{flex:1}}><Text style={styles.featureTitle}>{titleFor(m).name}</Text><Text style={styles.featureDescription}>{latest?display(m,latest.value)+' '+unitFor(m)+' · '+latest.date:'No readings yet'}</Text></View><Text style={styles.chevron}>›</Text></Pressable>})}
       {healthSection==='metrics'&&<View style={styles.featureRow}><View style={{flex:1}}><Text style={styles.featureTitle}>Visceral fat</Text><Text style={styles.featureDescription}>Coming soon · measurement source will be recorded</Text></View></View>}
     </>}
 
@@ -147,6 +174,7 @@ export default function Health(){
  </View>;
 }
 const styles=StyleSheet.create({
+ diagramCard:{backgroundColor:'white',borderRadius:16,borderWidth:1,borderColor:theme.border,padding:12,marginBottom:12},diagramSwitch:{flexDirection:'row',gap:8,marginBottom:8},diagramChoice:{flex:1,padding:11,borderRadius:10,alignItems:'center',backgroundColor:theme.background},diagramHint:{fontSize:12,color:theme.slate,lineHeight:18,marginVertical:7},figureRow:{flexDirection:'row',gap:8},figureColumn:{flex:1,position:'relative',alignItems:'center'},figureLabel:{fontSize:13,fontWeight:'700',color:theme.navy},figureHotspots:{position:'absolute',top:20,left:0,right:0,height:290},hotspot:{position:'absolute',width:30,height:30,borderRadius:15},
  topActions:{flexDirection:'row',alignItems:'center',gap:10},settingsIcon:{padding:10,borderRadius:12,backgroundColor:'white',borderWidth:1,borderColor:theme.border},settingsText:{fontSize:20,color:theme.navy},backLink:{alignSelf:'flex-start',paddingVertical:10,marginTop:12},backText:{color:theme.teal,fontSize:15,fontWeight:'800'},
  healthNav:{flexDirection:'row',gap:6,marginTop:18,marginBottom:20},healthNavTab:{flex:1,backgroundColor:'#E9F0F4',paddingVertical:12,paddingHorizontal:3,borderRadius:12,alignItems:'center',borderWidth:1,borderColor:theme.border},healthNavSelected:{backgroundColor:theme.navy,borderColor:theme.navy},healthNavText:{fontSize:12,fontWeight:'700',color:theme.navy},healthNavTextSelected:{color:'white'},overviewPanel:{backgroundColor:'#F0F6F8',borderRadius:16,padding:12,borderWidth:1,borderColor:theme.border},panelTitle:{fontSize:18,fontWeight:'800',color:theme.navy},panelSubtitle:{fontSize:13,color:theme.slate,marginTop:5,marginBottom:14,lineHeight:19},featureRow:{flexDirection:'row',alignItems:'center',backgroundColor:'white',borderWidth:1,borderColor:theme.border,borderRadius:14,padding:16,marginTop:12,gap:12},featureIcon:{width:40,height:40,borderRadius:10,backgroundColor:'#E2F4F3',alignItems:'center',justifyContent:'center'},featureEmoji:{fontSize:25,color:theme.teal},featureTitle:{fontSize:16,fontWeight:'800',color:theme.navy},featureDescription:{fontSize:12,color:theme.slate,lineHeight:18,marginTop:4},chevron:{fontSize:28,color:theme.slate},
  trend:{fontSize:11,color:theme.teal,marginTop:6,fontWeight:'600'},rangeRow:{flexDirection:'row',gap:6,marginVertical:12},rangeButton:{flex:1,alignItems:'center',padding:8,borderRadius:8,backgroundColor:theme.background},rangeSelected:{backgroundColor:theme.navy},rangeText:{color:theme.navy,fontSize:12,fontWeight:'700'},rangeTextSelected:{color:'white'},chartArea:{alignItems:'center'},chartMax:{color:theme.slate,fontSize:12,alignSelf:'flex-start'},chartMin:{color:theme.slate,fontSize:12,alignSelf:'flex-start'},chartDates:{flexDirection:'row',justifyContent:'space-between'},
