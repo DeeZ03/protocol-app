@@ -66,9 +66,20 @@ export default function Health(){
   const bpOther=Number(secondValue.trim().replace(',','.'));
   if(marker==='systolic'&&(!secondValue.trim()||!Number.isFinite(bpOther)||bpOther<=0||bpOther>300)){Alert.alert('Check blood pressure','Enter both systolic and diastolic values.');return;}
   if(!value.trim()||!Number.isFinite(num)||num<=0||num>(marker==='steps'?100000:10000)||(marker==='steps'&&!Number.isInteger(num))||(marker==='sleep'&&num>24)){Alert.alert('Check measurement','Enter a valid positive number.');return;}
+  // Soft plausibility checks: unusual measurements may be genuine, so allow confirmation.
+  const rawPrimary=Number(value.trim().replace(',','.'));
+  const unusual:string[]=[];
+  if(marker==='weight'&&(num<20||num>350))unusual.push('weight');
+  if(marker==='waist'&&(num<35||num>250))unusual.push('waist circumference');
+  if(marker==='bodyfat'&&(num<2||num>70))unusual.push('body fat percentage');
+  if(marker==='heart'&&(num<30||num>150))unusual.push('resting heart rate');
+  if(marker==='sleep'&&num>16)unusual.push('sleep duration');
+  if(marker==='steps'&&num>60000)unusual.push('daily steps');
+  if(marker==='systolic'&&(num<70||num>250||bpOther<40||bpOther>150||num<=bpOther))unusual.push('blood pressure');
+  if(marker==='weight'&&weightUnit==='st'&&!Number.isInteger(rawPrimary)){Alert.alert('Check stones','Enter whole stones and put the remaining pounds in the second field.');return;}
   const entryDate=dateKey(new Date());
   const singleDaily=['weight','bodyfat','waist','steps','sleep'].includes(marker);
-  const existing=singleDaily?items.filter(i=>i.marker===marker&&i.date===entryDate):[];
+  const existing=(singleDaily||marker==='systolic')?items.filter(i=>i.date===entryDate&&(i.marker===marker||(marker==='systolic'&&i.marker==='diastolic'))):[];
   const persist=async()=>{
    setSaving(true);
    try{
@@ -79,16 +90,17 @@ export default function Health(){
    }catch{Alert.alert('Could not save','Your entry was not saved.');}
    finally{setSaving(false);}
   };
+  const confirmSave=()=>{if(unusual.length){Alert.alert('Check unusual measurement',`This ${unusual.join(', ')} reading looks unusual. Please check the numbers and units before saving.`,[{text:'Edit reading',style:'cancel'},{text:'Save anyway',onPress:()=>{void persist();}}]);}else{void persist();}};
   if(existing.length){
    Alert.alert('Update today’s reading?',`You already recorded ${titleFor(marker).name.toLowerCase()} today. Replace ${existing.length===1?'that reading':'those readings'} with this one?`,[
     {text:'Keep existing',style:'cancel'},
-    {text:'Replace reading',onPress:()=>{void persist();}}
+    {text:'Replace reading',onPress:confirmSave}
    ]);
    return;
   }
-  await persist();
+  confirmSave();
  };
- const remove=(entry:RecordItem)=>Alert.alert('Delete measurement?','This entry will be removed from this device.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{try{const next=items.filter(i=>i.id!==entry.id);await AsyncStorage.setItem(KEY,JSON.stringify(next));setItems(next);}catch{Alert.alert('Could not delete','Please try again.');}}}]);
+ const remove=(entry:RecordItem)=>Alert.alert('Delete measurement?','This entry will be removed from this device.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{try{const paired=entry.marker==='systolic'||entry.marker==='diastolic';const pairPrefix=entry.id.replace(/-[ab]$/,'');const next=items.filter(i=>i.id!==entry.id&&!(paired&&i.id.replace(/-[ab]$/,'')===pairPrefix&&(i.marker==='systolic'||i.marker==='diastolic')));await AsyncStorage.setItem(KEY,JSON.stringify(next));setItems(next);}catch{Alert.alert('Could not delete','Please try again.');}}}]);
  return <View style={styles.screen}>
   <FlatList data={[] as RecordItem[]} keyExtractor={i=>i.id} contentContainerStyle={styles.content}
    ListHeaderComponent={<>
