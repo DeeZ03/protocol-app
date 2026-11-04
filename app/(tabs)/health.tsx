@@ -54,9 +54,27 @@ export default function Health(){
   const bpOther=Number(secondValue.trim().replace(',','.'));
   if(marker==='systolic'&&(!secondValue.trim()||!Number.isFinite(bpOther)||bpOther<=0||bpOther>300)){Alert.alert('Check blood pressure','Enter both systolic and diastolic values.');return;}
   if(!value.trim()||!Number.isFinite(num)||num<=0||num>(marker==='steps'?100000:10000)||(marker==='steps'&&!Number.isInteger(num))||(marker==='sleep'&&num>24)){Alert.alert('Check measurement','Enter a valid positive number.');return;}
-  setSaving(true);
-  try{const entryDate=dateKey(new Date());const pairId=Date.now().toString();const next=[{id:pairId+'-a',marker,value:num,date:entryDate,note:note.trim()},...(marker==='systolic'?[{id:pairId+'-b',marker:'diastolic' as Marker,value:bpOther,date:entryDate,note:note.trim()}]:[]),...items];await AsyncStorage.setItem(KEY,JSON.stringify(next));setItems(next);setVisible(false);setValue('');setSecondValue('');setNote('');}
-  catch{Alert.alert('Could not save','Your entry was not saved.');}finally{setSaving(false);}
+  const entryDate=dateKey(new Date());
+  const singleDaily=['weight','bodyfat','waist','steps','sleep'].includes(marker);
+  const existing=singleDaily?items.filter(i=>i.marker===marker&&i.date===entryDate):[];
+  const persist=async()=>{
+   setSaving(true);
+   try{
+    const pairId=Date.now().toString();
+    const next=[{id:pairId+'-a',marker,value:num,date:entryDate,note:note.trim()},...(marker==='systolic'?[{id:pairId+'-b',marker:'diastolic' as Marker,value:bpOther,date:entryDate,note:note.trim()}]:[]),...items.filter(i=>!existing.some(e=>e.id===i.id))];
+    await AsyncStorage.setItem(KEY,JSON.stringify(next));
+    setItems(next);setVisible(false);setValue('');setSecondValue('');setNote('');
+   }catch{Alert.alert('Could not save','Your entry was not saved.');}
+   finally{setSaving(false);}
+  };
+  if(existing.length){
+   Alert.alert('Update today’s reading?',`You already recorded ${titleFor(marker).name.toLowerCase()} today. Replace ${existing.length===1?'that reading':'those readings'} with this one?`,[
+    {text:'Keep existing',style:'cancel'},
+    {text:'Replace reading',onPress:()=>{void persist();}}
+   ]);
+   return;
+  }
+  await persist();
  };
  const remove=(entry:RecordItem)=>Alert.alert('Delete measurement?','This entry will be removed from this device.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{try{const next=items.filter(i=>i.id!==entry.id);await AsyncStorage.setItem(KEY,JSON.stringify(next));setItems(next);}catch{Alert.alert('Could not delete','Please try again.');}}}]);
  return <View style={styles.screen}>
