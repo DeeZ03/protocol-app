@@ -19,7 +19,7 @@ const MARKERS = [
  {key:'sleep',name:'Sleep duration',unit:'hours',hint:'e.g. 7.5'},
 ] as const;
 type Marker = typeof MARKERS[number]['key'];
-type RecordItem = {id:string;marker:Marker;value:number;date:string;note:string};
+type RecordItem = {id:string;marker:Marker;value:number;date:string;note:string;time?:string};
 const dateKey=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const titleFor=(key:Marker)=>MARKERS.find(m=>m.key===key)!;
 export default function Health(){
@@ -79,25 +79,27 @@ export default function Health(){
   if(marker==='weight'&&weightUnit==='st'&&!Number.isInteger(rawPrimary)){Alert.alert('Check stones','Enter whole stones and put the remaining pounds in the second field.');return;}
   const entryDate=dateKey(new Date());
   const singleDaily=['weight','bodyfat','waist','steps','sleep'].includes(marker);
-  const existing=(singleDaily||marker==='systolic')?items.filter(i=>i.date===entryDate&&(i.marker===marker||(marker==='systolic'&&i.marker==='diastolic'))):[];
+  const existing=singleDaily?items.filter(i=>i.date===entryDate&&i.marker===marker):[];
   const persist=async()=>{
    setSaving(true);
    try{
-    const pairId=Date.now().toString();
-    const next=[{id:pairId+'-a',marker,value:num,date:entryDate,note:note.trim()},...(marker==='systolic'?[{id:pairId+'-b',marker:'diastolic' as Marker,value:bpOther,date:entryDate,note:note.trim()}]:[]),...items.filter(i=>!existing.some(e=>e.id===i.id))];
+    const now=new Date();const pairId=now.getTime().toString();const entryTime=now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false});
+    const next=[{id:pairId+'-a',marker,value:num,date:entryDate,time:entryTime,note:note.trim()},...(marker==='systolic'?[{id:pairId+'-b',marker:'diastolic' as Marker,value:bpOther,date:entryDate,time:entryTime,note:note.trim()}]:[]),...items.filter(i=>!existing.some(e=>e.id===i.id))];
     await AsyncStorage.setItem(KEY,JSON.stringify(next));
     setItems(next);setVisible(false);setValue('');setSecondValue('');setNote('');
    }catch{Alert.alert('Could not save','Your entry was not saved.');}
    finally{setSaving(false);}
   };
-  const confirmSave=()=>{if(unusual.length){Alert.alert('Check unusual measurement',`This ${unusual.join(', ')} reading looks unusual. Please check the numbers and units before saving.`,[{text:'Edit reading',style:'cancel'},{text:'Save anyway',onPress:()=>{void persist();}}]);}else{void persist();}};
+  const confirmSave=()=>{Keyboard.dismiss();if(unusual.length){Alert.alert('Check unusual measurement',`This ${unusual.join(', ')} reading looks unusual. Please check the numbers and units before saving.`,[{text:'Edit reading',style:'cancel'},{text:'Save anyway',onPress:()=>{void persist();}}]);}else{void persist();}};
   if(existing.length){
+   Keyboard.dismiss();
    Alert.alert('Update today’s reading?',`You already recorded ${titleFor(marker).name.toLowerCase()} today. Replace ${existing.length===1?'that reading':'those readings'} with this one?`,[
     {text:'Keep existing',style:'cancel'},
     {text:'Replace reading',onPress:confirmSave}
    ]);
    return;
   }
+  Keyboard.dismiss();
   confirmSave();
  };
  const remove=(entry:RecordItem)=>Alert.alert('Delete measurement?','This entry will be removed from this device.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{try{const paired=entry.marker==='systolic'||entry.marker==='diastolic';const pairPrefix=entry.id.replace(/-[ab]$/,'');const next=items.filter(i=>i.id!==entry.id&&!(paired&&i.id.replace(/-[ab]$/,'')===pairPrefix&&(i.marker==='systolic'||i.marker==='diastolic')));await AsyncStorage.setItem(KEY,JSON.stringify(next));setItems(next);}catch{Alert.alert('Could not delete','Please try again.');}}}]);
