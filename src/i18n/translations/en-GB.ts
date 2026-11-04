@@ -1,0 +1,16 @@
+export const enGB = {
+    'tab.dashboard':'Dashboard','tab.protocols':'Protocols','tab.health':'Health','tab.library':'Library','tab.community':'Community',
+    'health.yourHealth':'YOUR HEALTH','health.atGlance':'Your health at a glance','health.add':'+ Add',
+    'health.measurements':'Body measurements','health.composition':'Body composition','health.activity':'Sleep & activity',
+    'health.measurementsDesc':'Waist, chest, hips, arms, thighs and more',
+    'health.compositionDesc':'Body fat and future visceral fat tracking',
+    'health.activityDesc':'Sleep and daily steps','health.noEntries':'No entries yet',
+    'health.settings':'Settings','health.units':'Units','health.done':'Done',
+    'settings.language':'App language','settings.languageHint':'Choose the language used in Protocol. More screens will be translated progressively.',
+    'health.howToMeasure':'How to measure','health.hideGuide':'Hide measuring guide',
+    'health.male':'Male diagram','health.female':'Female diagram','health.front':'Front','health.back':'Back',
+    'health.neck':'Neck','health.chest':'Chest','health.waist':'Waist circumference','health.hips':'Hips / Glutes',
+    'health.arms':'Arms','health.thighs':'Thighs','health.calves':'Calves',
+    'health.weight':'Weight','health.bloodPressure':'Blood pressure','health.heart':'Resting heart rate','health.steps':'Daily steps',
+    'health.bodyFat':'Body fat','health.sleep':'Sleep duration',
+  } as const;
