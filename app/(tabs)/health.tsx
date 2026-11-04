@@ -15,6 +15,8 @@ const MARKERS = [
  {key:'heart',name:'Resting heart rate',unit:'bpm',hint:'e.g. 65'},
  {key:'bodyfat',name:'Body fat',unit:'%',hint:'e.g. 22'},
  {key:'waist',name:'Waist circumference',unit:'cm',hint:'e.g. 85'},
+ {key:'steps',name:'Daily steps',unit:'steps',hint:'e.g. 8000'},
+ {key:'sleep',name:'Sleep duration',unit:'hours',hint:'e.g. 7.5'},
 ] as const;
 type Marker = typeof MARKERS[number]['key'];
 type RecordItem = {id:string;marker:Marker;value:number;date:string;note:string};
@@ -50,7 +52,7 @@ export default function Health(){
   if(marker==='weight'&&weightUnit==='st'&&(!Number.isFinite(Number(secondValue.replace(',','.')||0))||Number(secondValue||0)<0||Number(secondValue||0)>=14)){Alert.alert('Check pounds','Enter pounds between 0 and 13.9.');return;}
   const bpOther=Number(secondValue.trim().replace(',','.'));
   if(marker==='systolic'&&(!secondValue.trim()||!Number.isFinite(bpOther)||bpOther<=0||bpOther>300)){Alert.alert('Check blood pressure','Enter both systolic and diastolic values.');return;}
-  if(!value.trim()||!Number.isFinite(num)||num<=0||num>10000){Alert.alert('Check measurement','Enter a valid positive number.');return;}
+  if(!value.trim()||!Number.isFinite(num)||num<=0||num>(marker==='steps'?100000:10000)){Alert.alert('Check measurement','Enter a valid positive number.');return;}
   setSaving(true);
   try{const entryDate=dateKey(new Date());const pairId=Date.now().toString();const next=[{id:pairId+'-a',marker,value:num,date:entryDate,note:note.trim()},...(marker==='systolic'?[{id:pairId+'-b',marker:'diastolic' as Marker,value:bpOther,date:entryDate,note:note.trim()}]:[]),...items];await AsyncStorage.setItem(KEY,JSON.stringify(next));setItems(next);setVisible(false);setValue('');setSecondValue('');setNote('');}
   catch{Alert.alert('Could not save','Your entry was not saved.');}finally{setSaving(false);}
