@@ -1,4 +1,3 @@
-import type { TranslationKey } from './en-GB';
 export const esES: Record<keyof typeof import('./en-GB').enGB, string> = {
     'tab.dashboard':'Inicio','tab.protocols':'Protocolos','tab.health':'Salud','tab.library':'Biblioteca','tab.community':'Comunidad',
     'health.yourHealth':'TU SALUD','health.atGlance':'Tu salud de un vistazo','health.add':'+ Añadir',
