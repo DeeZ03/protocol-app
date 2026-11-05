@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, Animated, PanResponder } from 'react-native';
 import { theme } from '../theme';
+import { useLanguage } from '../i18n';
 import { isScheduled } from '../protocolDates';
 
 type Protocol = { id: string; name: string; compound: string; days?: number[]; time?: string; startDate?: string };
@@ -13,6 +14,8 @@ const monthMove = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth()
 const scheduled = (p: Protocol, d: Date) => isScheduled(p, d);
 
 export function ProtocolCalendar({ protocols, completions }: Props) {
+  const { language, t } = useLanguage();
+  const locale = language === 'es' ? 'es-ES' : 'en-GB';
   const [week, setWeek] = useState(() => weekStart(new Date()));
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12));
   const [selected, setSelected] = useState(() => new Date());
@@ -70,12 +73,12 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
   return (
     <View>
       <View style={styles.top}>
-        <Text style={styles.title}>Your calendar</Text>
+        <Text style={styles.title}>{t('calendar.title')}</Text>
         <Pressable accessibilityRole="button" onPress={() => { setMonth(new Date(week.getFullYear(), week.getMonth(), 1, 12)); setView('month'); }}>
-          <Text style={styles.link}>Expand month ↗</Text>
+          <Text style={styles.link}>{t('calendar.expand')}</Text>
         </Pressable>
       </View>
-      <Text style={styles.caption}>{week.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} · Swipe to change week</Text>
+      <Text style={styles.caption}>{week.toLocaleDateString(locale, { month: 'long', year: 'numeric' })} · {t('calendar.swipeWeek')}</Text>
       <View {...gesture.panHandlers} style={styles.swipeArea}>
       <Animated.View style={[styles.week, { transform: [{ translateX: slide }] }]}>
         {weeks.map(date => {
@@ -83,8 +86,8 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
           const done = protocols.filter(p => scheduled(p, date) && hasCompletion(p, date)).length;
           const isToday = key(date) === key(new Date());
           return (
-            <Pressable key={key(date)} accessibilityRole="button" accessibilityLabel={'View ' + date.toDateString()} onPress={() => openDay(date)} style={[styles.day, isToday && styles.today]}>
-              <Text style={[styles.weekLabel, isToday && styles.todayText]}>{date.toLocaleDateString('en-GB', { weekday: 'short' })}</Text>
+            <Pressable key={key(date)} accessibilityRole="button" accessibilityLabel={t('calendar.view') + date.toLocaleDateString(locale, {weekday:'long',day:'numeric',month:'long'})} onPress={() => openDay(date)} style={[styles.day, isToday && styles.today]}>
+              <Text style={[styles.weekLabel, isToday && styles.todayText]}>{date.toLocaleDateString(locale, { weekday: 'short' })}</Text>
               <Text style={[styles.dayNumber, isToday && styles.todayText]}>{date.getDate()}</Text>
               <View style={[styles.dot, count ? { backgroundColor: done === count ? '#00C853' : key(date) < key(new Date()) ? '#FF3040' : '#087CFF' } : styles.noDot]} />
             </Pressable>
@@ -92,27 +95,27 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
         })}
       </Animated.View>
       </View>
-      <Text style={styles.caption}>Tap any day for its 24-hour schedule. Blue: scheduled · Green: completed · Red: past not recorded · Hollow: empty.</Text>
+      <Text style={styles.caption}>{t('calendar.legend')}</Text>
       <Modal visible={view !== null} animationType="slide" onRequestClose={() => setView(null)}>
         <View style={styles.modal}>
           <View style={styles.modalTop}>
-            <Pressable onPress={() => setView(view === 'day' ? 'month' : null)} accessibilityRole="button"><Text style={styles.link}>{view === 'day' ? '‹ Month' : 'Close'}</Text></Pressable>
-            <Text style={styles.title}>{view === 'month' ? 'Calendar' : 'Daily timeline'}</Text>
-            <Pressable onPress={() => setView(null)} accessibilityRole="button"><Text style={styles.link}>Done</Text></Pressable>
+            <Pressable onPress={() => setView(view === 'day' ? 'month' : null)} accessibilityRole="button"><Text style={styles.link}>{view === 'day' ? t('calendar.monthBack') : t('calendar.close')}</Text></Pressable>
+            <Text style={styles.title}>{view === 'month' ? t('calendar.calendar') : t('calendar.timeline')}</Text>
+            <Pressable onPress={() => setView(null)} accessibilityRole="button"><Text style={styles.link}>{t('calendar.done')}</Text></Pressable>
           </View>
           {view === 'month' ? (
             <View {...monthGesture.panHandlers} style={styles.monthWrap}>
               <Animated.View style={{ transform: [{ translateX: monthSlide }] }}>
-              <Text style={styles.monthHeading}>{month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</Text>
-              <Text style={styles.caption}>Swipe left or right to change month</Text>
+              <Text style={styles.monthHeading}>{month.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</Text>
+              <Text style={styles.caption}>{t('calendar.swipeMonth')}</Text>
               <View style={styles.monthGrid}>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(label => <Text key={label} style={styles.gridHeading}>{label}</Text>)}
+                {Array.from({length:7},(_,i)=>new Date(2024,0,1+i).toLocaleDateString(locale,{weekday:'short'})).map((label,i) => <Text key={i} style={styles.gridHeading}>{label}</Text>)}
                 {Array.from({ length: firstOffset }, (_, i) => <View key={'blank' + i} style={styles.monthCell} />)}
                 {Array.from({ length: daysInMonth }, (_, i) => {
                   const date = new Date(month.getFullYear(), month.getMonth(), i + 1, 12);
                   const count = protocols.filter(p => scheduled(p, date)).length;
                   const done = protocols.filter(p => scheduled(p, date) && hasCompletion(p, date)).length;
-                  return <Pressable key={i} style={[styles.monthCell, key(date) === key(new Date()) && styles.today]} onPress={() => openDay(date)} accessibilityRole="button" accessibilityLabel={'View ' + date.toDateString()}>
+                  return <Pressable key={i} style={[styles.monthCell, key(date) === key(new Date()) && styles.today]} onPress={() => openDay(date)} accessibilityRole="button" accessibilityLabel={t('calendar.view') + date.toLocaleDateString(locale, {weekday:'long',day:'numeric',month:'long'})}>
                     <Text style={styles.monthNumber}>{i + 1}</Text>
                     <View style={[styles.dot, count ? { backgroundColor: done === count ? '#00C853' : key(date) < key(new Date()) ? '#FF3040' : '#087CFF' } : styles.noDot]} />
                   </Pressable>;
@@ -122,8 +125,8 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
             </View>
           ) : (
             <ScrollView ref={timelineRef} contentContainerStyle={styles.timeline} onLayout={() => { const first = dayEntries[0]; if (first?.time) timelineRef.current?.scrollTo({ y: Math.max(0, Number(first.time.slice(0, 2)) * 68 - 120), animated: false }); }}>
-              <Text style={styles.monthHeading}>{selected.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
-              <Text style={styles.caption}>{dayEntries.filter(p => hasCompletion(p, selected)).length} of {dayEntries.length} completed · Scroll through 24 hours</Text>
+              <Text style={styles.monthHeading}>{selected.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+              <Text style={styles.caption}>{dayEntries.filter(p => hasCompletion(p, selected)).length} {t('calendar.of')} {dayEntries.length} {t('calendar.completedScroll')}</Text>
               {Array.from({ length: 24 }, (_, hour) => {
                 const entries = dayEntries.filter(p => Number(p.time?.slice(0, 2)) === hour);
                 return <View key={hour} style={styles.hourRow}>
@@ -131,12 +134,12 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
                   <View style={styles.hourContent}>
                     {entries.map(p => <View key={p.id} style={[styles.entry, { borderColor: statusColor(p, selected) }]}>
                       <Text style={styles.entryTitle}>{p.time} · {p.name}</Text>
-                      <Text style={styles.caption}>{p.compound} · {hasCompletion(p, selected) ? 'Marked completed' : statusColor(p, selected) === '#FF3040' ? 'Not recorded' : 'Scheduled'}</Text>
+                      <Text style={styles.caption}>{p.compound} · {hasCompletion(p, selected) ? t('calendar.marked') : statusColor(p, selected) === '#FF3040' ? t('calendar.notRecorded') : t('calendar.scheduled')}</Text>
                     </View>)}
                   </View>
                 </View>;
               })}
-              <Text style={styles.caption}>Completion is self-reported. This calendar does not provide medical advice or reminders.</Text>
+              <Text style={styles.caption}>{t('calendar.disclaimer')}</Text>
             </ScrollView>
           )}
         </View>
