@@ -153,8 +153,9 @@ export default function Dashboard() {
         </Pressable>
       </View>
       <Text style={styles.disclaimer}>{t('dashboard.disclaimer')}</Text>
+    </ScrollView>
     <AppSettings visible={settingsOpen} onClose={()=>setSettingsOpen(false)} />
-      </ScrollView>
+    </>
   );
 }
 
