@@ -339,6 +339,6 @@ export const esES: Record<keyof typeof import('./en-GB').enGB, string> = {
     'compound.condition.ADHD': "TDAH",
     'compound.condition.Atrial fibrillation': "Fibrilación auricular",
     'compound.condition.Epilepsy': "Epilepsia",
-    'compound.condition.Parkinson's disease': "Enfermedad de Parkinson",
-    'compound.condition.Alzheimer's disease': "Enfermedad de Alzheimer",
+    "compound.condition.Parkinson's disease": "Enfermedad de Parkinson",
+    "compound.condition.Alzheimer's disease": "Enfermedad de Alzheimer",
 };
