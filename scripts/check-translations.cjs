@@ -15,8 +15,10 @@ function readCatalogue(locale, file) {
   const keys = new Set();
   for (const diagnostic of source.parseDiagnostics) report(locale + ': syntax error: ' + ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
   function visit(node) {
-    if (ts.isVariableDeclaration(node) && node.initializer && ts.isAsExpression(node.initializer) && ts.isObjectLiteralExpression(node.initializer.expression)) {
-      for (const property of node.initializer.expression.properties) {
+    if (ts.isVariableDeclaration(node) && node.initializer) {
+      const value = ts.isAsExpression(node.initializer) ? node.initializer.expression : node.initializer;
+      if (!ts.isObjectLiteralExpression(value)) { ts.forEachChild(node, visit); return; }
+      for (const property of value.properties) {
         if (!ts.isPropertyAssignment(property)) continue;
         const name = property.name;
         if (!ts.isStringLiteral(name) && !ts.isIdentifier(name)) continue;
