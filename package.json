@@ -29,7 +29,8 @@
     "expo-splash-screen": "~31.0.10",
     "expo-notifications": "~0.32.12",
     "@react-native-community/datetimepicker": "8.4.4",
-    "react-native-svg": "15.12.1"
+    "react-native-svg": "15.12.1",
+    "expo-image-picker": "~17.0.8"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
