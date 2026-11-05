@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
+import { useLanguage } from '../../src/i18n';
 import { syncReminders, requestProtocolReminderPermission } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
@@ -21,6 +22,9 @@ const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 
 export default function Protocols() {
   const insets = useSafeAreaInsets();
+  const { language, t } = useLanguage();
+  const localizedDays = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, i + 1).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short' }));
+  const durationLabel = (weeks: number) => `${weeks} ${t(weeks === 1 ? 'protocols.week' : 'protocols.weeks')}`;
   const [items, setItems] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -214,35 +218,35 @@ export default function Protocols() {
     <View style={styles.page}>
       <View style={styles.headingRow}>
         <View style={styles.headingText}>
-          <Text style={styles.eyebrow}>YOUR ROUTINES</Text>
+          <Text style={styles.eyebrow}>{t('protocols.eyebrow')}</Text>
           <Text style={styles.heading}>Protocols</Text>
         </View>
         <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setReminderEnabled(false); setEndReminderEnabled(false); setAlertMode('prominent'); setReminderSettingsOpen(false); setEditing(true); }}>
-          <Text style={styles.addText}>+ Add</Text>
+          <Text style={styles.addText}>{t('protocols.add')}</Text>
         </Pressable>
       </View>
-      <Text style={styles.intro}>Create and keep track of your own protocol records.</Text>
+      <Text style={styles.intro}>{t('protocols.intro')}</Text>
       <FlatList
         data={items}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.emptyCard}>
-            <Text style={styles.cardTitle}>{loading ? 'Loading...' : 'No protocols yet'}</Text>
-            <Text style={styles.detail}>Tap Add to create your first protocol record.</Text>
+            <Text style={styles.cardTitle}>{loading ? t('protocols.loading') : t('protocols.empty')}</Text>
+            <Text style={styles.detail}>{t('protocols.emptyHelp')}</Text>
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name} details`} style={styles.card} onPress={() => setSelectedId(item.id)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('protocols.view') + item.name + t('protocols.details')} style={styles.card} onPress={() => setSelectedId(item.id)}>
             <View style={styles.cardTop}>
               <Text style={styles.cardTitle}>{item.name}</Text>
               <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
             </View>
             <Text style={styles.detail} numberOfLines={1}>{item.compound}</Text>
-            <Text style={styles.cardMeta} numberOfLines={1}>{item.days?.length ? item.days.map(day => DAYS[day]).join(', ') + ' · ' + (item.time || 'No time') : 'No scheduled days'}  ·  {item.customEndDate ? 'Until ' + item.customEndDate : item.durationWeeks ? item.durationWeeks + (item.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
+            <Text style={styles.cardMeta} numberOfLines={1}>{item.days?.length ? item.days.map(day => localizedDays[day]).join(', ') + ' · ' + (item.time || t('protocols.noTime')) : t('protocols.noDays')}  ·  {item.customEndDate ? t('protocols.until') + item.customEndDate : item.durationWeeks ? durationLabel(item.durationWeeks) : t('protocols.indefinite')}</Text>
           </Pressable>
         )}
-        ListFooterComponent={<Text style={styles.disclaimer}>Prototype for testing only. Do not enter sensitive personal health information. No medical advice or dosing recommendations are provided. Records are stored on this device and are not synced or backed up.</Text>}
+        ListFooterComponent={<Text style={styles.disclaimer}>{t('protocols.disclaimer')}</Text>}
       />
       <Modal visible={!!selectedProtocol} transparent animationType="fade" onRequestClose={() => setSelectedId(null)}>
         <View style={styles.detailsBackdrop}>
@@ -258,7 +262,7 @@ export default function Protocols() {
                 <Text style={styles.detailsLabel}>COMPOUND</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.compound}</Text>
                 <Text style={styles.detailsLabel}>SCHEDULE</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.days?.length ? selectedProtocol.days.map(day => DAYS[day]).join(', ') + ' at ' + selectedProtocol.time : 'No scheduled days'}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.days?.length ? selectedProtocol.days.map(day => localizedDays[day]).join(', ') + ' at ' + selectedProtocol.time : 'No scheduled days'}</Text>
                 <Text style={styles.detailsLabel}>START DATE</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.startDate || 'Not set'}</Text>
                 <Text style={styles.detailsLabel}>DURATION</Text>
