@@ -250,6 +250,7 @@ export default function Protocols() {
       />
       <Modal visible={!!selectedProtocol} transparent animationType="fade" onRequestClose={() => setSelectedId(null)}>
         <View style={styles.detailsBackdrop}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('protocols.closeDetails')} onPress={() => setSelectedId(null)} style={StyleSheet.absoluteFill} />
           <View style={styles.detailsSheet}>
             <View style={styles.detailsHeader}>
               <Text style={styles.heading}>{selectedProtocol?.name}</Text>
