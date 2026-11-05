@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { useLanguage } from '../../src/i18n';
+import { AppSettings } from '../../src/components/AppSettings';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
 import { syncReminders } from '../../src/reminders';
 import { isScheduled } from '../../src/protocolDates';
@@ -17,6 +18,7 @@ const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 
 export default function Dashboard() {
   const {language,t}=useLanguage();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +83,7 @@ export default function Dashboard() {
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
-      <Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text>
+      <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('health.settings')} onPress={()=>setSettingsOpen(true)} style={{padding:10}}><Text style={{fontSize:27,fontWeight:'700',color:theme.navy}}>☰</Text></Pressable></View>
       <Text style={styles.heading}>{t('dashboard.heading')}</Text>
       <Text style={styles.subtitle}>{t('dashboard.subtitle')}</Text>
       <View style={styles.card}>
@@ -150,7 +152,8 @@ export default function Dashboard() {
         </Pressable>
       </View>
       <Text style={styles.disclaimer}>{t('dashboard.disclaimer')}</Text>
-    </ScrollView>
+    <AppSettings visible={settingsOpen} onClose={()=>setSettingsOpen(false)} />
+      </ScrollView>
   );
 }
 
