@@ -120,7 +120,7 @@ export default function Dashboard() {
             <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{completedToday}</Text><Text style={styles.summaryLabel}>{t('dashboard.completedShort')}</Text></View>
             <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{dueToday.length-completedToday}</Text><Text style={styles.summaryLabel}>{t('dashboard.remainingShort')}</Text></View>
           </View>
-          <View style={styles.progressTrack}><View style={[styles.progressFill,{width:(dueToday.length ? Math.min(100,completedToday/dueToday.length*100) : 0)+'%'}]} /></View>
+          <View style={styles.progressTrack}><View style={[styles.progressFill,{width: `${dueToday.length ? Math.min(100, completedToday / dueToday.length * 100) : 0}%` as const}]} /></View>
           <Text style={styles.progressCaption}>{dueToday.length ? Math.round(completedToday/dueToday.length*100)+'% '+t('dashboard.completed') : t('dashboard.noneToday')}</Text>
         </>}
       </View>
