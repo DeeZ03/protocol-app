@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { useLanguage } from '../../src/i18n';
-import { AppSettings } from '../../src/components/AppSettings';
+import { AppSettings, PROFILE_KEY, type LocalProfile } from '../../src/components/AppSettings';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
 import { syncReminders } from '../../src/reminders';
 import { isScheduled } from '../../src/protocolDates';
@@ -23,6 +23,7 @@ const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 export default function Dashboard() {
   const {language,t}=useLanguage();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [profile, setProfile] = useState<LocalProfile>({username:''});
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
   const [healthReadings, setHealthReadings] = useState<HealthReading[]>([]);
@@ -42,6 +43,7 @@ export default function Dashboard() {
     setError(false);
     setToday(new Date());
     syncReminders().catch(() => {});
+    AsyncStorage.getItem(PROFILE_KEY).then(raw=>{if(active)setProfile(raw?JSON.parse(raw) as LocalProfile:{username:''});}).catch(()=>{});
     setHealthError(false);
     Promise.all([AsyncStorage.getItem(HEALTH_KEY), AsyncStorage.getItem(HEALTH_UNITS_KEY)])
       .then(([records, prefs]) => {
@@ -108,7 +110,7 @@ export default function Dashboard() {
   return (
     <>
     <ScrollView contentContainerStyle={styles.page}>
-      <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('health.settings')} onPress={()=>setSettingsOpen(true)} style={{padding:10}}><Text style={{fontSize:27,fontWeight:'700',color:theme.navy}}>☰</Text></Pressable></View>
+      <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel={t('settings.profile')} onPress={()=>setSettingsOpen(true)} style={styles.headerAvatar}>{profile.avatarUri?<Image source={{uri:profile.avatarUri}} style={styles.headerAvatarImage}/>:<Text style={styles.headerAvatarLetters}>{(profile.username.trim().slice(0,2)||'P').toUpperCase()}</Text>}</Pressable><Pressable accessibilityRole="button" accessibilityLabel={t('health.settings')} onPress={()=>setSettingsOpen(true)} style={{padding:10}}><Text style={{fontSize:27,fontWeight:'700',color:theme.navy}}>☰</Text></Pressable></View></View>
       <Text style={styles.heading}>{t('dashboard.heading')}</Text>
       <Text style={styles.subtitle}>{t('dashboard.subtitle')}</Text>
       <View style={styles.overviewCard}>
@@ -207,12 +209,15 @@ export default function Dashboard() {
       </View>
       <Text style={styles.disclaimer}>{t('dashboard.disclaimer')}</Text>
     </ScrollView>
-    <AppSettings visible={settingsOpen} onClose={()=>setSettingsOpen(false)} />
+    <AppSettings visible={settingsOpen} onClose={()=>{setSettingsOpen(false);AsyncStorage.getItem(PROFILE_KEY).then(raw=>setProfile(raw?JSON.parse(raw) as LocalProfile:{username:''})).catch(()=>{});}} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  headerActions:{flexDirection:'row',alignItems:'center',gap:6},
+  headerAvatar:{width:42,height:42,borderRadius:21,backgroundColor:theme.navy,borderWidth:2,borderColor:theme.teal,overflow:'hidden',alignItems:'center',justifyContent:'center'},
+  headerAvatarImage:{width:42,height:42},headerAvatarLetters:{color:theme.white,fontWeight:'800',fontSize:15},
   page: { padding: 20, paddingBottom: 36, backgroundColor: theme.background },
   eyebrow: { color: theme.teal, fontWeight: '800', letterSpacing: 1.4, fontSize: 12, marginBottom: 12 },
   heading: { fontSize: 30, fontWeight: '800', color: theme.navy },
