@@ -45,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Check TypeScript before building
+        run: npm run check
+
       - name: Prepare Protocol branding assets
         run: |
           mkdir -p assets
