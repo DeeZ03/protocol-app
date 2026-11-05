@@ -253,33 +253,33 @@ export default function Protocols() {
           <View style={styles.detailsSheet}>
             <View style={styles.detailsHeader}>
               <Text style={styles.heading}>{selectedProtocol?.name}</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Close details" onPress={() => setSelectedId(null)}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('protocols.closeDetails')} onPress={() => setSelectedId(null)}>
                 <Ionicons name="close" size={26} color={theme.navy}/>
               </Pressable>
             </View>
             <ScrollView contentContainerStyle={styles.detailsScroll}>
               {selectedProtocol && <>
-                <Text style={styles.detailsLabel}>COMPOUND</Text>
+                <Text style={styles.detailsLabel}>{t('protocols.compound')}</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.compound}</Text>
-                <Text style={styles.detailsLabel}>SCHEDULE</Text>
+                <Text style={styles.detailsLabel}>{t('protocols.schedule')}</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.days?.length ? selectedProtocol.days.map(day => localizedDays[day]).join(', ') + ' at ' + selectedProtocol.time : 'No scheduled days'}</Text>
-                <Text style={styles.detailsLabel}>START DATE</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.startDate || 'Not set'}</Text>
-                <Text style={styles.detailsLabel}>DURATION</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.customEndDate ? 'Custom end date' : selectedProtocol.durationWeeks ? selectedProtocol.durationWeeks + (selectedProtocol.durationWeeks === 1 ? ' week' : ' weeks') : 'Indefinitely'}</Text>
-                {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>Ends: {endDate(selectedProtocol)}{'\n'}Last scheduled: {finalScheduledDate(selectedProtocol) ?? 'None'}</Text>}
-                <Text style={styles.detailsLabel}>REMINDERS</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.reminderEnabled === true ? 'Notification on' : 'Off'}{selectedProtocol.reminderEnabled === true && selectedProtocol.endReminderEnabled === true ? ' · Final activity alert on' : ''}</Text>
-                <Text style={styles.detailsLabel}>SCHEDULE NOTES</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || 'No notes added'}</Text>
+                <Text style={styles.detailsLabel}>{t('protocols.startDate')}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.startDate || t('protocols.notSet')}</Text>
+                <Text style={styles.detailsLabel}>{t('protocols.duration')}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.customEndDate ? t('protocols.customEnd') : selectedProtocol.durationWeeks ? durationLabel(selectedProtocol.durationWeeks) : t('protocols.indefinite')}</Text>
+                {!!endDate(selectedProtocol) && <Text style={styles.detailsValue}>{t('protocols.ends')}{endDate(selectedProtocol)}{'\n'}{t('protocols.lastScheduled')}{finalScheduledDate(selectedProtocol) ?? t('protocols.none')}</Text>}
+                <Text style={styles.detailsLabel}>{t('protocols.reminders')}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.reminderEnabled === true ? t('protocols.notificationOn') : t('protocols.off')}{selectedProtocol.reminderEnabled === true && selectedProtocol.endReminderEnabled === true ? t('protocols.finalAlert') : ''}</Text>
+                <Text style={styles.detailsLabel}>{t('protocols.notes')}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || t('protocols.noNotes')}</Text>
               </>}
             </ScrollView>
             <View style={styles.detailsActions}>
               <Pressable accessibilityRole="button" style={styles.detailsEdit} onPress={() => { if (selectedProtocol) openEdit(selectedProtocol); }}>
-                <Ionicons name="create-outline" size={19} color={theme.white}/><Text style={styles.saveText}>Edit</Text>
+                <Ionicons name="create-outline" size={19} color={theme.white}/><Text style={styles.saveText}>{t('protocols.edit')}</Text>
               </Pressable>
               <Pressable accessibilityRole="button" style={styles.detailsDelete} onPress={() => { if (selectedProtocol) remove(selectedProtocol); }}>
-                <Ionicons name="trash-outline" size={19} color="#B42318"/><Text style={styles.delete}>Delete</Text>
+                <Ionicons name="trash-outline" size={19} color="#B42318"/><Text style={styles.delete}>{t('protocols.delete')}</Text>
               </Pressable>
             </View>
           </View>
@@ -288,59 +288,59 @@ export default function Protocols() {
       <Modal visible={editing} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
         <KeyboardAvoidingView style={[styles.modal, { paddingTop: Math.max(insets.top + 16, 28) }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalHeader}>
-            <Text style={styles.heading}>{editingId ? 'Edit protocol' : 'Add protocol'}</Text>
-            <Pressable accessibilityRole="button" onPress={close}><Text style={styles.cancel}>Cancel</Text></Pressable>
+            <Text style={styles.heading}>{t(editingId ? 'protocols.editProtocol' : 'protocols.addProtocol')}</Text>
+            <Pressable accessibilityRole="button" onPress={close}><Text style={styles.cancel}>{t('protocols.cancel')}</Text></Pressable>
           </View>
           <ScrollView ref={formScrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.formContent}>
-          <Text style={styles.label}>Protocol name</Text>
-          <TextInput style={styles.input} placeholder="e.g. My routine" value={name} onChangeText={setName} maxLength={80} />
-          <Text style={styles.label}>Compound name</Text>
+          <Text style={styles.label}>{t('protocols.name')}</Text>
+          <TextInput style={styles.input} placeholder={language === 'es' ? 'p. ej., Mi rutina' : 'e.g. My routine'} value={name} onChangeText={setName} maxLength={80} />
+          <Text style={styles.label}>{t('protocols.compoundName')}</Text>
           <Pressable accessibilityRole="button" style={styles.browseButton} onPress={() => setCompoundPickerOpen(true)}>
             <Ionicons name="search-outline" size={23} color={theme.teal}/>
             <View style={{flex:1}}>
-              <Text style={styles.browseTitle}>{compound || 'Browse compounds'}</Text>
-              <Text style={styles.browseSubtitle}>Search medications, peptides and more</Text>
+              <Text style={styles.browseTitle}>{compound || t('protocols.browse')}</Text>
+              <Text style={styles.browseSubtitle}>{t('protocols.browseHint')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
           </Pressable>
-          <Text style={styles.label}>Scheduled days (optional)</Text>
+          <Text style={styles.label}>{t('protocols.scheduledDays')}</Text>
           <View style={styles.dayRow}>
             {DAYS.map((day, index) => {
               const selected = days.includes(index);
               return (
                 <Pressable key={day} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} style={[styles.dayButton, selected && styles.daySelected]} onPress={() => setDays(current => current.includes(index) ? current.filter(d => d !== index) : [...current, index])}>
-                  <Text style={[styles.dayText, selected && styles.daySelectedText]}>{day}</Text>
+                  <Text style={[styles.dayText, selected && styles.daySelectedText]}>{localizedDays[index]}</Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={styles.label}>Time (24-hour format)</Text>
-          <Pressable accessibilityRole="button" style={styles.input} onPress={openTimePicker}><Text style={styles.pickerText}>{time || 'Choose time'}</Text></Pressable>
-          <Text style={styles.label}>Start date (optional for indefinite protocols)</Text>
-          <Pressable accessibilityRole="button" style={styles.input} onPress={openDatePicker}><Text style={styles.pickerText}>{startDate || 'Choose start date'}</Text></Pressable>
-          {!!startDate && <Pressable onPress={() => setStartDate('')}><Text style={styles.clearText}>Clear start date</Text></Pressable>}
-          <Text style={styles.label}>Duration</Text>
+          <Text style={styles.label}>{t('protocols.time')}</Text>
+          <Pressable accessibilityRole="button" style={styles.input} onPress={openTimePicker}><Text style={styles.pickerText}>{time || t('protocols.chooseTime')}</Text></Pressable>
+          <Text style={styles.label}>{t('protocols.startOptional')}</Text>
+          <Pressable accessibilityRole="button" style={styles.input} onPress={openDatePicker}><Text style={styles.pickerText}>{startDate || t('protocols.chooseStart')}</Text></Pressable>
+          {!!startDate && <Pressable onPress={() => setStartDate('')}><Text style={styles.clearText}>{t('protocols.clearStart')}</Text></Pressable>}
+          <Text style={styles.label}>{t('protocols.duration')}</Text>
           <View style={styles.modeRow}>
-            {([['indefinite', 'Indefinitely'], ['weeks', 'Fixed weeks'], ['custom', 'End date']] as const).map(([mode, label]) => (
+            {([['indefinite', t('protocols.indefinite')], ['weeks', t('protocols.fixedWeeks')], ['custom', t('protocols.endDate')]] as const).map(([mode, label]) => (
               <Pressable key={mode} accessibilityRole="radio" accessibilityState={{ checked: durationMode === mode }} style={[styles.modeButton, durationMode === mode && styles.daySelected]} onPress={() => setMode(mode)}>
                 <Text style={[styles.dayText, durationMode === mode && styles.daySelectedText]}>{label}</Text>
               </Pressable>
             ))}
           </View>
           {durationMode === 'weeks' && <Pressable accessibilityRole="button" style={styles.input} onPress={() => setWeekPickerOpen(true)}>
-            <Text style={styles.pickerText}>{durationWeeks} {durationWeeks === 1 ? 'week' : 'weeks'}  ▾</Text>
+            <Text style={styles.pickerText}>{durationLabel(durationWeeks ?? 0)}  ▾</Text>
           </Pressable>}
           {durationMode === 'custom' && <Pressable accessibilityRole="button" style={styles.input} onPress={openEndDatePicker}>
-            <Text style={styles.pickerText}>Ends: {customEndDate}</Text>
+            <Text style={styles.pickerText}>{t('protocols.ends')}{customEndDate}</Text>
           </Pressable>}
-          {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>Ends {endDate({startDate, durationWeeks, customEndDate})}. Last scheduled activity: {finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? 'none selected'}.</Text>}
-          {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>Choose a start date for a fixed duration.</Text>}
+          {durationMode !== 'indefinite' && !!startDate && <Text style={styles.help}>{t('protocols.endsForm')}{endDate({startDate, durationWeeks, customEndDate})}{t('protocols.lastActivity')}{finalScheduledDate({startDate, durationWeeks, customEndDate, days, time}) ?? t('protocols.noSelected')}.</Text>}
+          {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>{t('protocols.chooseStartFixed')}</Text>}
           <View style={styles.reminderCard}>
             <Pressable accessibilityRole="button" accessibilityState={{expanded: reminderSettingsOpen}} style={styles.reminderRow} onPress={() => setReminderSettingsOpen(v => !v)}>
               <View style={styles.reminderIcon}><Ionicons name="notifications-outline" size={23} color={theme.navy}/></View>
               <View style={{flex:1}}>
-                <Text style={styles.reminderTitle}>Set reminders</Text>
-                <Text style={styles.reminderHelp}>{reminderEnabled ? 'Notification on' + (endReminderEnabled && durationMode !== 'indefinite' ? ' · Final alert on' : '') : 'Off · Choose how Protocol notifies you'}</Text>
+                <Text style={styles.reminderTitle}>{t('protocols.setReminders')}</Text>
+                <Text style={styles.reminderHelp}>{reminderEnabled ? t('protocols.notificationOn') + (endReminderEnabled && durationMode !== 'indefinite' ? t('protocols.finalOn') : '') : t('protocols.reminderOff')}</Text>
               </View>
               <Ionicons name={reminderSettingsOpen ? 'chevron-up' : 'chevron-forward'} size={22} color={theme.slate}/>
             </Pressable>
@@ -349,28 +349,28 @@ export default function Protocols() {
               <Pressable accessibilityRole="switch" accessibilityState={{checked: reminderEnabled}} style={styles.reminderRow} onPress={() => { setReminderEnabled(v => !v); if (reminderEnabled) setEndReminderEnabled(false); }}>
                 <Ionicons name="notifications-outline" size={22} color={theme.slate}/>
                 <View style={{flex:1}}>
-                  <Text style={styles.reminderTitle}>Notification</Text>
-                  <Text style={styles.reminderHelp}>Discreet alert at your scheduled time</Text>
+                  <Text style={styles.reminderTitle}>{t('protocols.notification')}</Text>
+                  <Text style={styles.reminderHelp}>{t('protocols.notificationHint')}</Text>
                 </View>
                 <Ionicons name={reminderEnabled ? 'checkbox' : 'square-outline'} size={27} color={reminderEnabled ? theme.teal : theme.slate}/>
               </Pressable>
-              {reminderEnabled && <Text style={styles.reminderHelp}>High-priority Android notification with sound and vibration. Device settings may affect delivery.</Text>}
+              {reminderEnabled && <Text style={styles.reminderHelp}>{t('protocols.androidHint')}</Text>}
               {reminderEnabled && durationMode !== 'indefinite' && <Pressable accessibilityRole="switch" accessibilityState={{checked: endReminderEnabled}} style={styles.reminderRow} onPress={() => setEndReminderEnabled(v => !v)}>
                 <Ionicons name="flag-outline" size={22} color={theme.slate}/>
                 <View style={{flex:1}}>
-                  <Text style={styles.reminderTitle}>Final activity alert</Text>
-                  <Text style={styles.reminderHelp}>Different message on your last scheduled activity</Text>
+                  <Text style={styles.reminderTitle}>{t('protocols.finalActivity')}</Text>
+                  <Text style={styles.reminderHelp}>{t('protocols.finalHint')}</Text>
                 </View>
                 <Ionicons name={endReminderEnabled ? 'checkbox' : 'square-outline'} size={27} color={endReminderEnabled ? theme.teal : theme.slate}/>
               </Pressable>}
-              <Text style={styles.reminderHelp}>A full repeating alarm is planned separately. Android notification permission is requested when saving with notifications enabled.</Text>
+              <Text style={styles.reminderHelp}>{t('protocols.alarmHint')}</Text>
             </>}
           </View>
-          <Text style={styles.label}>Schedule notes (optional)</Text>
-          <TextInput style={[styles.input, styles.multiline]} placeholder="e.g. Days and times" value={schedule} onChangeText={setSchedule} onFocus={scrollToNotes} multiline maxLength={250} />
-          <Text style={styles.help}>This records information you enter. It does not calculate or recommend a dose.</Text>
+          <Text style={styles.label}>{t('protocols.scheduleNotes')}</Text>
+          <TextInput style={[styles.input, styles.multiline]} placeholder={language === 'es' ? 'p. ej., Días y horas' : 'e.g. Days and times'} value={schedule} onChangeText={setSchedule} onFocus={scrollToNotes} multiline maxLength={250} />
+          <Text style={styles.help}>{t('protocols.noteHelp')}</Text>
           <Pressable accessibilityRole="button" disabled={saving} style={[styles.saveButton, saving && styles.disabled]} onPress={save}>
-            <Text style={styles.saveText}>{saving ? 'Saving...' : editingId ? 'Save changes' : 'Save protocol'}</Text>
+            <Text style={styles.saveText}>{t(saving ? 'protocols.saving' : editingId ? 'protocols.saveChanges' : 'protocols.save')}</Text>
           </Pressable>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -379,11 +379,11 @@ export default function Protocols() {
       <Modal visible={weekPickerOpen} transparent animationType="fade" onRequestClose={() => setWeekPickerOpen(false)}>
         <View style={styles.pickerOverlay}>
           <View style={styles.pickerSheet}>
-            <View style={styles.pickerHeader}><Text style={styles.cardTitle}>Select duration</Text><Pressable onPress={() => setWeekPickerOpen(false)}><Text style={styles.cancel}>Close</Text></Pressable></View>
+            <View style={styles.pickerHeader}><Text style={styles.cardTitle}>{t('protocols.selectDuration')}</Text><Pressable onPress={() => setWeekPickerOpen(false)}><Text style={styles.cancel}>{t('protocols.close')}</Text></Pressable></View>
             <ScrollView style={styles.weekList}>
               {Array.from({ length: 52 }, (_, i) => i + 1).map(weeks => (
                 <Pressable key={weeks} accessibilityRole="button" style={[styles.weekOption, durationWeeks === weeks && styles.weekSelected]} onPress={() => { setDurationWeeks(weeks); setWeekPickerOpen(false); }}>
-                  <Text style={styles.pickerText}>{weeks} {weeks === 1 ? 'week' : 'weeks'}{durationWeeks === weeks ? '  ✓' : ''}</Text>
+                  <Text style={styles.pickerText}>{durationLabel(weeks)}{durationWeeks === weeks ? '  ✓' : ''}</Text>
                 </Pressable>
               ))}
             </ScrollView>
