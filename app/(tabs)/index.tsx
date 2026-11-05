@@ -87,8 +87,18 @@ export default function Dashboard() {
       <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('health.settings')} onPress={()=>setSettingsOpen(true)} style={{padding:10}}><Text style={{fontSize:27,fontWeight:'700',color:theme.navy}}>☰</Text></Pressable></View>
       <Text style={styles.heading}>{t('dashboard.heading')}</Text>
       <Text style={styles.subtitle}>{t('dashboard.subtitle')}</Text>
-      <View style={styles.card}>
-        <ProtocolCalendar protocols={protocols} completions={completions} />
+      <View style={styles.overviewCard}>
+        <Text style={styles.cardTitle}>{t('dashboard.todayOverview')}</Text>
+        <Text style={styles.muted}>{today.toLocaleDateString(language==='es'?'es-ES':'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
+        {loading || error ? <Text style={styles.body}>{loading?t('dashboard.loading'):t('dashboard.loadError')}</Text> : <>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{dueToday.length}</Text><Text style={styles.summaryLabel}>{t('dashboard.scheduledShort')}</Text></View>
+            <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{completedToday}</Text><Text style={styles.summaryLabel}>{t('dashboard.completedShort')}</Text></View>
+            <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{dueToday.length-completedToday}</Text><Text style={styles.summaryLabel}>{t('dashboard.remainingShort')}</Text></View>
+          </View>
+          <View style={styles.progressTrack}><View style={[styles.progressFill,{width:(dueToday.length ? Math.min(100,completedToday/dueToday.length*100) : 0)+'%'}]} /></View>
+          <Text style={styles.progressCaption}>{dueToday.length ? Math.round(completedToday/dueToday.length*100)+'% '+t('dashboard.completed') : t('dashboard.noneToday')}</Text>
+        </>}
       </View>
       <View style={[styles.card, highlightedId && dueToday.some(item => item.id === highlightedId) && styles.highlightedCard]}>
         <Text style={styles.cardTitle}>{t('dashboard.scheduled')}</Text>
@@ -117,6 +127,9 @@ export default function Dashboard() {
         }
         {!loading && !error && withoutDays > 0 &&
           <Text style={styles.muted}>{withoutDays} {withoutDays===1?t('dashboard.noDaysOne'):t('dashboard.noDaysMany')}</Text>}
+      </View>
+      <View style={styles.card}>
+        <ProtocolCalendar protocols={protocols} completions={completions} />
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('dashboard.recent')}</Text>
@@ -164,6 +177,14 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.teal, fontWeight: '800', letterSpacing: 1.4, fontSize: 12, marginBottom: 12 },
   heading: { fontSize: 30, fontWeight: '800', color: theme.navy },
   subtitle: { color: theme.slate, fontSize: 16, marginTop: 8, marginBottom: 24, lineHeight: 23 },
+  overviewCard: { padding: 20, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, marginBottom: 18 },
+  summaryMetric: { flex: 1, alignItems: 'center' },
+  summaryNumber: { fontSize: 30, fontWeight: '800', color: theme.navy },
+  summaryLabel: { color: theme.slate, fontSize: 12, marginTop: 4, textAlign: 'center' },
+  progressTrack: { height: 11, backgroundColor: theme.border, borderRadius: 8, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: theme.teal, borderRadius: 8 },
+  progressCaption: { color: theme.slate, fontSize: 13, marginTop: 9 },
   card: { padding: 20, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
   cardTitle: { fontSize: 18, fontWeight: '700', color: theme.navy, marginBottom: 12 },
   body: { color: theme.text, fontSize: 15, lineHeight: 22 },
