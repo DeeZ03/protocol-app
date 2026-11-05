@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-nati
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
+import { useLanguage } from '../../src/i18n';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
 import { syncReminders } from '../../src/reminders';
 import { isScheduled } from '../../src/protocolDates';
@@ -15,6 +16,7 @@ const localDate = (date: Date) => [date.getFullYear(), String(date.getMonth() + 
 const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 
 export default function Dashboard() {
+  const {language,t}=useLanguage();
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function Dashboard() {
     if (savingId || loading || error) return;
     const now = new Date();
     if (localDate(now) !== dateKey) {
-      Alert.alert('Day changed', 'Please reopen the Dashboard to refresh today’s schedule.');
+      Alert.alert(t('dashboard.dayChanged'), t('dashboard.dayChangedBody'));
       return;
     }
     setSavingId(item.id);
@@ -71,7 +73,7 @@ export default function Dashboard() {
       await AsyncStorage.setItem(COMPLETIONS_KEY, JSON.stringify(next));
       setCompletions(next);
     } catch {
-      Alert.alert('Unable to save', 'Your completion could not be updated. Please try again.');
+      Alert.alert(t('dashboard.saveError'), t('dashboard.saveErrorBody'));
     } finally {
       setSavingId(null);
     }
@@ -79,21 +81,21 @@ export default function Dashboard() {
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
-      <Text style={styles.eyebrow}>PROTOCOL / OVERVIEW</Text>
-      <Text style={styles.heading}>Your day, organised.</Text>
-      <Text style={styles.subtitle}>A clear space for tracking your health routines.</Text>
+      <Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text>
+      <Text style={styles.heading}>{t('dashboard.heading')}</Text>
+      <Text style={styles.subtitle}>{t('dashboard.subtitle')}</Text>
       <View style={styles.card}>
         <ProtocolCalendar protocols={protocols} completions={completions} />
       </View>
       <View style={[styles.card, highlightedId && dueToday.some(item => item.id === highlightedId) && styles.highlightedCard]}>
-        <Text style={styles.cardTitle}>Scheduled today</Text>
-        <Text style={styles.muted}>{today.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
+        <Text style={styles.cardTitle}>{t('dashboard.scheduled')}</Text>
+        <Text style={styles.muted}>{today.toLocaleDateString(language==='es'?'es-ES':'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
         {!loading && !error && dueToday.length > 0 && (
-          <Text style={styles.progress}>{completedToday} of {dueToday.length} completed</Text>
+          <Text style={styles.progress}>{completedToday} {t('dashboard.of')} {dueToday.length} {t('dashboard.completed')}</Text>
         )}
-        {loading ? <Text style={styles.body}>Loading today's schedule...</Text> :
-          error ? <Text style={styles.body}>Unable to load your saved schedule.</Text> :
-          dueToday.length === 0 ? <Text style={[styles.body, styles.topGap]}>Nothing scheduled for today.</Text> :
+        {loading ? <Text style={styles.body}>{t('dashboard.loading')}</Text> :
+          error ? <Text style={styles.body}>{t('dashboard.loadError')}</Text> :
+          dueToday.length === 0 ? <Text style={[styles.body, styles.topGap]}>{t('dashboard.noneToday')}</Text> :
           dueToday.map(item => {
             const completed = completions.some(entry => entry.protocolId === item.id && entry.date === dateKey);
             return (
@@ -103,51 +105,51 @@ export default function Dashboard() {
                   <Text style={styles.protocolName}>{item.name}</Text>
                   <Text style={styles.muted}>{item.compound}</Text>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={completed ? 'Undo completion for ' + item.name : 'Mark ' + item.name + ' completed'} disabled={savingId !== null} style={[styles.completionButton, completed && styles.completedButton]} onPress={() => toggleCompletion(item)}>
-                  <Text style={[styles.completionText, completed && styles.completedText]}>{savingId === item.id ? 'Saving...' : completed ? 'Undo' : 'Done'}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={completed ? t('dashboard.undoAccessibility') + item.name : t('dashboard.markAccessibility') + item.name} disabled={savingId !== null} style={[styles.completionButton, completed && styles.completedButton]} onPress={() => toggleCompletion(item)}>
+                  <Text style={[styles.completionText, completed && styles.completedText]}>{savingId === item.id ? t('dashboard.saving') : completed ? t('dashboard.undo') : t('dashboard.done')}</Text>
                 </Pressable>
               </View>
             );
           })
         }
         {!loading && !error && withoutDays > 0 &&
-          <Text style={styles.muted}>{withoutDays} {withoutDays === 1 ? 'protocol has' : 'protocols have'} no selected days and {withoutDays === 1 ? 'is' : 'are'} not included in today's schedule.</Text>}
+          <Text style={styles.muted}>{withoutDays} {withoutDays===1?t('dashboard.noDaysOne'):t('dashboard.noDaysMany')}</Text>}
       </View>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Recent completion history</Text>
-        {loading ? <Text style={styles.body}>Loading history...</Text> :
-          error ? <Text style={styles.body}>Unable to load history.</Text> :
-          history.length === 0 ? <Text style={styles.body}>No completed activities recorded yet.</Text> :
+        <Text style={styles.cardTitle}>{t('dashboard.recent')}</Text>
+        {loading ? <Text style={styles.body}>{t('dashboard.loadingHistory')}</Text> :
+          error ? <Text style={styles.body}>{t('dashboard.historyError')}</Text> :
+          history.length === 0 ? <Text style={styles.body}>{t('dashboard.noHistory')}</Text> :
           history.map(entry => (
             <View style={styles.protocolRow} key={entry.protocolId + ':' + entry.date}>
               <Text style={styles.protocolName}>{entry.name}</Text>
-              <Text style={styles.muted}>{entry.date} · Scheduled {entry.time}</Text>
+              <Text style={styles.muted}>{entry.date} · {t('dashboard.scheduledAt')} {entry.time}</Text>
             </View>
           ))}
-        <Text style={styles.muted}>History records when you marked an activity done; it does not verify that it occurred.</Text>
+        <Text style={styles.muted}>{t('dashboard.historyNote')}</Text>
       </View>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Your protocols</Text>
-        {loading ? <Text style={styles.body}>Loading your records...</Text> :
-          error ? <Text style={styles.body}>Unable to load your saved protocols.</Text> :
-          protocols.length === 0 ? <Text style={styles.body}>No protocols added yet.</Text> : (
+        <Text style={styles.cardTitle}>{t('dashboard.yourProtocols')}</Text>
+        {loading ? <Text style={styles.body}>{t('dashboard.loadingRecords')}</Text> :
+          error ? <Text style={styles.body}>{t('dashboard.recordsError')}</Text> :
+          protocols.length === 0 ? <Text style={styles.body}>{t('dashboard.noProtocols')}</Text> : (
             <>
               <Text style={styles.count}>{protocols.length}</Text>
-              <Text style={styles.muted}>{protocols.length === 1 ? 'Saved protocol' : 'Saved protocols'}</Text>
+              <Text style={styles.muted}>{protocols.length === 1 ? t('dashboard.savedOne') : t('dashboard.savedMany')}</Text>
               {protocols.slice(0, 5).map(item => (
                 <View style={styles.protocolRow} key={item.id}>
                   <Text style={styles.protocolName}>{item.name}</Text>
                   <Text style={styles.muted}>{item.compound}</Text>
                 </View>
               ))}
-              {protocols.length > 5 && <Text style={styles.muted}>And {protocols.length - 5} more...</Text>}
+              {protocols.length > 5 && <Text style={styles.muted}>{language==='es'?'Y':'And'} {protocols.length - 5} {t('dashboard.more')}</Text>}
             </>
           )}
         <Pressable accessibilityRole="button" style={styles.button} onPress={() => router.push('/protocols')}>
-          <Text style={styles.buttonText}>{protocols.length ? 'View protocols' : 'Add your first protocol'}</Text>
+          <Text style={styles.buttonText}>{protocols.length ? t('dashboard.view') : t('dashboard.addFirst')}</Text>
         </Pressable>
       </View>
-      <Text style={styles.disclaimer}>Prototype only. Records are stored on this device, not backed up or synced. Do not enter sensitive health information. Completion is self-reported. Not medical advice or a dosing recommendation.</Text>
+      <Text style={styles.disclaimer}>{t('dashboard.disclaimer')}</Text>
     </ScrollView>
   );
 }
