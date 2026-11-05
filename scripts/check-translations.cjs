@@ -25,6 +25,7 @@ function readCatalogue(locale, file) {
         const key = name.text;
         if (keys.has(key)) report(locale + ': duplicate translation key: ' + key);
         keys.add(key);
+        if (ts.isStringLiteral(property.initializer) && !property.initializer.text.trim()) report(locale + ': empty translation: ' + key);
       }
     }
     ts.forEachChild(node, visit);
