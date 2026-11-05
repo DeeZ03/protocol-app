@@ -82,7 +82,7 @@ export default function Protocols() {
       .then(value => {
         if (active) setItems(value ? JSON.parse(value) as Protocol[] : []);
       })
-      .catch(() => Alert.alert('Unable to load', 'Your saved test protocols could not be loaded.'))
+      .catch(() => Alert.alert(t('protocols.loadTitle'), t('protocols.loadBody')))
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []));
@@ -124,34 +124,34 @@ export default function Protocols() {
 
   const save = async () => {
     if (!name.trim() || !compound.trim()) {
-      Alert.alert('Missing information', 'Enter a name and compound to continue.');
+      Alert.alert(t('protocols.missingTitle'), t('protocols.missingBody'));
       return;
     }
     if (days.length > 0 && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time.trim())) {
-      Alert.alert('Check time', 'Enter a time in 24-hour format, for example 09:30.');
+      Alert.alert(t('protocols.timeTitle'), t('protocols.timeBody'));
       return;
     }
     if (startDate.trim() && !validDate(startDate.trim())) {
-      Alert.alert('Check start date', 'Enter a valid date as YYYY-MM-DD, for example 2026-11-02.');
+      Alert.alert(t('protocols.startTitle'), t('protocols.startBody'));
       return;
     }
     if ((durationWeeks !== null || !!customEndDate) && !startDate) {
-      Alert.alert('Choose a start date', 'A fixed-duration protocol needs a start date.');
+      Alert.alert(t('protocols.startRequired'), t('protocols.startRequiredBody'));
       return;
     }
     if (customEndDate && (!validDate(customEndDate) || customEndDate < startDate)) {
-      Alert.alert('Check end date', 'Choose an end date on or after the start date.');
+      Alert.alert(t('protocols.endTitle'), t('protocols.endBody'));
       return;
     }
     if (reminderEnabled && (days.length === 0 || !time)) {
-      Alert.alert('Choose a schedule', 'Select scheduled days and a time before enabling reminders.');
+      Alert.alert(t('protocols.scheduleTitle'), t('protocols.scheduleBody'));
       return;
     }
     if (saving) return;
     setSaving(true);
     const existing = editingId ? items.find(item => item.id === editingId) : undefined;
     if (editingId && !existing) {
-      Alert.alert('Not found', 'This protocol is no longer available.');
+      Alert.alert(t('protocols.notFound'), t('protocols.notFoundBody'));
       setSaving(false);
       return;
     }
@@ -159,12 +159,12 @@ export default function Protocols() {
       try {
         const granted = await requestProtocolReminderPermission();
         if (!granted) {
-          Alert.alert('Notifications not enabled', 'Allow notifications in Android settings, or switch off reminders to save this protocol.');
+          Alert.alert(t('protocols.notificationsTitle'), t('protocols.notificationsBody'));
           setSaving(false);
           return;
         }
       } catch {
-        Alert.alert('Notification permission', 'Could not check notification permission. Try again or switch off reminders.');
+        Alert.alert(t('protocols.permissionTitle'), t('protocols.permissionBody'));
         setSaving(false);
         return;
       }
@@ -191,16 +191,16 @@ export default function Protocols() {
       await syncReminders().catch(() => {});
       close();
     } catch {
-      Alert.alert('Not saved', 'Something went wrong. Please try again.');
+      Alert.alert(t('protocols.notSaved'), t('protocols.retry'));
     } finally {
       setSaving(false);
     }
   };
 
   const remove = (entry: Protocol) => {
-    Alert.alert('Delete protocol?', `Remove "${entry.name}" from this device?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert(t('protocols.deleteTitle'), t('protocols.removePrefix') + entry.name + t('protocols.removeSuffix'), [
+      { text: t('protocols.cancel'), style: 'cancel' },
+      { text: t('protocols.delete'), style: 'destructive', onPress: async () => {
         const next = items.filter(item => item.id !== entry.id);
         setSelectedId(null);
         try {
@@ -208,7 +208,7 @@ export default function Protocols() {
           setItems(next);
           await syncReminders().catch(() => {});
         } catch {
-          Alert.alert('Unable to delete', 'Please try again.');
+          Alert.alert(t('protocols.deleteError'), t('protocols.tryAgain'));
         }
       } },
     ]);
