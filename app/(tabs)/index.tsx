@@ -10,9 +10,13 @@ import { syncReminders } from '../../src/reminders';
 import { isScheduled } from '../../src/protocolDates';
 
 type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string };
+type HealthReading = { id: string; marker: string; value: number; date: string };
+type HealthUnits = { weight?: 'kg' | 'lb' | 'st' };
 type Completion = { protocolId: string; date: string; completedAt: string; name: string; time: string };
 const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 const COMPLETIONS_KEY = 'protocol-app:completions:v1';
+const HEALTH_KEY = 'protocol-app:health-measurements:v1';
+const HEALTH_UNITS_KEY = 'protocol-app:health-units:v1';
 const localDate = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
 const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 
@@ -21,6 +25,9 @@ export default function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
+  const [healthReadings, setHealthReadings] = useState<HealthReading[]>([]);
+  const [healthUnits, setHealthUnits] = useState<HealthUnits>({});
+  const [healthError, setHealthError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -35,6 +42,16 @@ export default function Dashboard() {
     setError(false);
     setToday(new Date());
     syncReminders().catch(() => {});
+    setHealthError(false);
+    Promise.all([AsyncStorage.getItem(HEALTH_KEY), AsyncStorage.getItem(HEALTH_UNITS_KEY)])
+      .then(([records, prefs]) => {
+        if (!active) return;
+        const parsed: unknown = records ? JSON.parse(records) : [];
+        if (!Array.isArray(parsed)) throw new Error('Invalid health records');
+        setHealthReadings(parsed as HealthReading[]);
+        setHealthUnits(prefs ? JSON.parse(prefs) as HealthUnits : {});
+      })
+      .catch(() => { if (active) setHealthError(true); });
     Promise.all([AsyncStorage.getItem(STORAGE_KEY), AsyncStorage.getItem(COMPLETIONS_KEY)])
       .then(([records, history]) => {
         if (!active) return;
@@ -54,6 +71,13 @@ export default function Dashboard() {
   const completedToday = dueToday.filter(item => completions.some(entry => entry.protocolId === item.id && entry.date === dateKey)).length;
   const withoutDays = protocols.filter(item => !Array.isArray(item.days) || item.days.length === 0).length;
   const history = completions.slice().sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, 10);
+
+  const latestReading = (marker: string) => healthReadings.filter(item => item.marker === marker && Number.isFinite(item.value)).sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))[0];
+  const latestWeight = latestReading('weight');
+  const weightValue = latestWeight ? (healthUnits.weight === 'lb' ? (latestWeight.value * 2.20462262).toFixed(1) + ' lb' : healthUnits.weight === 'st' ? Math.floor(latestWeight.value * 2.20462262 / 14) + ' st ' + (latestWeight.value * 2.20462262 % 14).toFixed(1) + ' lb' : latestWeight.value.toFixed(1) + ' kg') : '—';
+  const latestHeart = latestReading('heart');
+  const latestBP = latestReading('systolic');
+  const pairedBP = latestBP ? healthReadings.find(item => item.marker === 'diastolic' && item.id.replace(/-[ab]$/, '') === latestBP.id.replace(/-[ab]$/, '')) : undefined;
 
   const toggleCompletion = async (item: Protocol) => {
     if (savingId || loading || error) return;
@@ -129,6 +153,22 @@ export default function Dashboard() {
           <Text style={styles.muted}>{withoutDays} {withoutDays===1?t('dashboard.noDaysOne'):t('dashboard.noDaysMany')}</Text>}
       </View>
       <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t('dashboard.healthSnapshot')}</Text>
+        {healthError ? <Text style={styles.body}>{t('dashboard.healthUnavailable')}</Text> : <View style={styles.healthRow}>
+          <View style={styles.healthMetric}><Text style={styles.healthLabel}>{t('health.weight')}</Text><Text style={styles.healthValue}>{weightValue}</Text></View>
+          <View style={styles.healthMetric}><Text style={styles.healthLabel}>{t('health.heart')}</Text><Text style={styles.healthValue}>{latestHeart ? latestHeart.value + ' bpm' : '—'}</Text></View>
+          <View style={styles.healthMetric}><Text style={styles.healthLabel}>{t('health.bloodPressure')}</Text><Text style={styles.healthValue}>{latestBP && pairedBP ? latestBP.value + '/' + pairedBP.value : '—'}</Text></View>
+        </View>}
+        <Pressable accessibilityRole="button" onPress={() => router.push('/health')} style={styles.inlineLink}><Text style={styles.inlineLinkText}>{t('dashboard.viewHealth')} ›</Text></Pressable>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t('dashboard.quickActions')}</Text>
+        <View style={styles.quickRow}>
+          <Pressable accessibilityRole="button" style={styles.quickButton} onPress={() => router.push('/protocols')}><Text style={styles.quickText}>{t('dashboard.openProtocols')}</Text></Pressable>
+          <Pressable accessibilityRole="button" style={styles.quickButton} onPress={() => router.push('/health')}><Text style={styles.quickText}>{t('dashboard.openHealth')}</Text></Pressable>
+        </View>
+      </View>
+      <View style={styles.card}>
         <ProtocolCalendar protocols={protocols} completions={completions} />
       </View>
       <View style={styles.card}>
@@ -185,6 +225,15 @@ const styles = StyleSheet.create({
   progressTrack: { height: 11, backgroundColor: theme.border, borderRadius: 8, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: theme.teal, borderRadius: 8 },
   progressCaption: { color: theme.slate, fontSize: 13, marginTop: 9 },
+  healthRow: { flexDirection: 'row', gap: 8 },
+  healthMetric: { flex: 1, minWidth: 0, paddingVertical: 12 },
+  healthLabel: { color: theme.slate, fontSize: 12, marginBottom: 8 },
+  healthValue: { color: theme.navy, fontSize: 16, fontWeight: '800' },
+  inlineLink: { alignSelf: 'flex-start', paddingVertical: 10 },
+  inlineLinkText: { color: theme.teal, fontWeight: '700' },
+  quickRow: { flexDirection: 'row', gap: 10 },
+  quickButton: { flex: 1, backgroundColor: theme.navy, padding: 14, borderRadius: 10, alignItems: 'center' },
+  quickText: { color: theme.white, fontWeight: '700', textAlign: 'center' },
   card: { padding: 20, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
   cardTitle: { fontSize: 18, fontWeight: '700', color: theme.navy, marginBottom: 12 },
   body: { color: theme.text, fontSize: 15, lineHeight: 22 },
