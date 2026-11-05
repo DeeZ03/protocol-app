@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, Image, Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
@@ -23,6 +23,7 @@ const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 export default function Dashboard() {
   const {language,t}=useLanguage();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState<'history' | 'protocols' | null>(null);
   const [profile, setProfile] = useState<LocalProfile>({username:''});
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
@@ -160,51 +161,29 @@ export default function Dashboard() {
         <Pressable accessibilityRole="button" onPress={() => router.push('/health')} style={styles.inlineLink}><Text style={styles.inlineLinkText}>{t('dashboard.viewHealth')} ›</Text></Pressable>
       </View>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('dashboard.quickActions')}</Text>
-        <View style={styles.quickRow}>
-          <Pressable accessibilityRole="button" style={styles.quickButton} onPress={() => router.push('/protocols')}><Text style={styles.quickText}>{t('dashboard.openProtocols')}</Text></Pressable>
-          <Pressable accessibilityRole="button" style={styles.quickButton} onPress={() => router.push('/health')}><Text style={styles.quickText}>{t('dashboard.openHealth')}</Text></Pressable>
-        </View>
-      </View>
-      <View style={styles.card}>
         <ProtocolCalendar protocols={protocols} completions={completions} />
       </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('dashboard.recent')}</Text>
-        {loading ? <Text style={styles.body}>{t('dashboard.loadingHistory')}</Text> :
-          error ? <Text style={styles.body}>{t('dashboard.historyError')}</Text> :
-          history.length === 0 ? <Text style={styles.body}>{t('dashboard.noHistory')}</Text> :
-          history.map(entry => (
-            <View style={styles.protocolRow} key={entry.protocolId + ':' + entry.date}>
-              <Text style={styles.protocolName}>{entry.name}</Text>
-              <Text style={styles.muted}>{entry.date} · {t('dashboard.scheduledAt')} {entry.time}</Text>
-            </View>
-          ))}
-        <Text style={styles.muted}>{t('dashboard.historyNote')}</Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('dashboard.yourProtocols')}</Text>
-        {loading ? <Text style={styles.body}>{t('dashboard.loadingRecords')}</Text> :
-          error ? <Text style={styles.body}>{t('dashboard.recordsError')}</Text> :
-          protocols.length === 0 ? <Text style={styles.body}>{t('dashboard.noProtocols')}</Text> : (
-            <>
-              <Text style={styles.count}>{protocols.length}</Text>
-              <Text style={styles.muted}>{protocols.length === 1 ? t('dashboard.savedOne') : t('dashboard.savedMany')}</Text>
-              {protocols.slice(0, 5).map(item => (
-                <View style={styles.protocolRow} key={item.id}>
-                  <Text style={styles.protocolName}>{item.name}</Text>
-                  <Text style={styles.muted}>{item.compound}</Text>
-                </View>
-              ))}
-              {protocols.length > 5 && <Text style={styles.muted}>{language==='es'?'Y':'And'} {protocols.length - 5} {t('dashboard.more')}</Text>}
-            </>
-          )}
-        <Pressable accessibilityRole="button" style={styles.button} onPress={() => router.push('/protocols')}>
-          <Text style={styles.buttonText}>{protocols.length ? t('dashboard.view') : t('dashboard.addFirst')}</Text>
-        </Pressable>
-      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('dashboard.recent')} style={styles.compactLink} onPress={()=>setDetailsOpen('history')}>
+        <View style={styles.compactLinkContent}><Text style={styles.compactLinkTitle}>{t('dashboard.recent')}</Text><Text style={styles.compactLinkSub}>{loading?t('dashboard.loadingHistory'):error?t('dashboard.historyError'):history.length===0?t('dashboard.noHistory'):history.length+' '+t('dashboard.completed')}</Text></View><Text style={styles.chevron}>›</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('dashboard.yourProtocols')} style={styles.compactLink} onPress={()=>setDetailsOpen('protocols')}>
+        <View style={styles.compactLinkContent}><Text style={styles.compactLinkTitle}>{t('dashboard.yourProtocols')}</Text><Text style={styles.compactLinkSub}>{loading?t('dashboard.loadingRecords'):error?t('dashboard.recordsError'):protocols.length+' '+(protocols.length===1?t('dashboard.savedOne'):t('dashboard.savedMany'))}</Text></View><Text style={styles.chevron}>›</Text>
+      </Pressable>
       <Text style={styles.disclaimer}>{t('dashboard.disclaimer')}</Text>
     </ScrollView>
+    <Modal visible={detailsOpen!==null} transparent animationType="fade" onRequestClose={()=>setDetailsOpen(null)}>
+      <View style={styles.modalBackdrop}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('health.done')} onPress={()=>setDetailsOpen(null)} style={StyleSheet.absoluteFill}/>
+        <View style={styles.modalPanel}>
+          <View style={styles.modalHeader}><Text style={styles.cardTitle}>{detailsOpen==='history'?t('dashboard.recent'):t('dashboard.yourProtocols')}</Text><Pressable accessibilityRole="button" onPress={()=>setDetailsOpen(null)}><Text style={styles.inlineLinkText}>{t('health.done')}</Text></Pressable></View>
+          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalList}>
+            {detailsOpen==='history' ? (loading?<Text style={styles.body}>{t('dashboard.loadingHistory')}</Text>:error?<Text style={styles.body}>{t('dashboard.historyError')}</Text>:history.length===0?<Text style={styles.body}>{t('dashboard.noHistory')}</Text>:history.map(entry=><View style={styles.protocolRow} key={entry.protocolId+':'+entry.date}><Text style={styles.protocolName}>{entry.name}</Text><Text style={styles.muted}>{entry.date} · {t('dashboard.scheduledAt')} {entry.time}</Text></View>)) : (loading?<Text style={styles.body}>{t('dashboard.loadingRecords')}</Text>:error?<Text style={styles.body}>{t('dashboard.recordsError')}</Text>:protocols.length===0?<Text style={styles.body}>{t('dashboard.noProtocols')}</Text>:protocols.map(item=><View style={styles.protocolRow} key={item.id}><Text style={styles.protocolName}>{item.name}</Text><Text style={styles.muted}>{item.compound}</Text></View>))}
+            {detailsOpen==='history'&&<Text style={styles.muted}>{t('dashboard.historyNote')}</Text>}
+            {detailsOpen==='protocols'&&<Pressable accessibilityRole="button" style={styles.button} onPress={()=>{setDetailsOpen(null);router.push('/protocols');}}><Text style={styles.buttonText}>{t('dashboard.view')}</Text></Pressable>}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
     <AppSettings visible={settingsOpen} onClose={()=>{setSettingsOpen(false);AsyncStorage.getItem(PROFILE_KEY).then(raw=>setProfile(raw?JSON.parse(raw) as LocalProfile:{username:''})).catch(()=>{});}} />
     </>
   );
@@ -217,15 +196,15 @@ const styles = StyleSheet.create({
   page: { padding: 20, paddingBottom: 36, backgroundColor: theme.background },
   eyebrow: { color: theme.teal, fontWeight: '800', letterSpacing: 1.4, fontSize: 12, marginBottom: 12 },
   heading: { fontSize: 30, fontWeight: '800', color: theme.navy },
-  subtitle: { color: theme.slate, fontSize: 16, marginTop: 8, marginBottom: 18, lineHeight: 23 },
-  overviewCard: { padding: 18, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, marginBottom: 12 },
+  subtitle: { color: theme.slate, fontSize: 15, marginTop: 5, marginBottom: 12, lineHeight: 21 },
+  overviewCard: { padding: 14, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 12 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6, marginBottom: 8 },
   summaryMetric: { flex: 1, alignItems: 'center' },
-  summaryNumber: { fontSize: 30, fontWeight: '800', color: theme.navy },
+  summaryNumber: { fontSize: 24, fontWeight: '800', color: theme.navy },
   summaryLabel: { color: theme.slate, fontSize: 12, marginTop: 4, textAlign: 'center' },
-  progressTrack: { height: 11, backgroundColor: theme.border, borderRadius: 8, overflow: 'hidden' },
+  progressTrack: { height: 7, backgroundColor: theme.border, borderRadius: 8, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: theme.teal, borderRadius: 8 },
-  progressCaption: { color: theme.slate, fontSize: 13, marginTop: 9 },
+  progressCaption: { color: theme.slate, fontSize: 12, marginTop: 5 },
   healthRow: { flexDirection: 'row', gap: 8 },
   healthMetric: { flex: 1, minWidth: 0, paddingVertical: 6 },
   healthLabel: { color: theme.slate, fontSize: 12, marginBottom: 8 },
@@ -235,8 +214,8 @@ const styles = StyleSheet.create({
   quickRow: { flexDirection: 'row', gap: 10 },
   quickButton: { flex: 1, backgroundColor: theme.navy, padding: 14, borderRadius: 10, alignItems: 'center' },
   quickText: { color: theme.white, fontWeight: '700', textAlign: 'center' },
-  card: { padding: 18, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: theme.navy, marginBottom: 12 },
+  card: { padding: 14, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 12 },
+  cardTitle: { fontSize: 17, fontWeight: '700', color: theme.navy, marginBottom: 7 },
   body: { color: theme.text, fontSize: 15, lineHeight: 22 },
   topGap: { marginTop: 12 },
   scheduleTime: { color: theme.teal, fontWeight: '800', fontSize: 16, width: 55 },
@@ -247,12 +226,19 @@ const styles = StyleSheet.create({
   completionText: { color: theme.navy, fontWeight: '700' },
   completedText: { color: theme.white },
   count: { fontSize: 38, fontWeight: '800', color: theme.navy },
-  protocolRow: { borderTopWidth: 1, borderTopColor: theme.border, paddingVertical: 12 },
+  protocolRow: { borderTopWidth: 1, borderTopColor: theme.border, paddingVertical: 8 },
   highlightedCard: { borderColor: theme.teal, borderWidth: 2 },
   highlightedRow: { backgroundColor: '#E8F7F7', borderRadius: 10, paddingHorizontal: 8 },
   protocolName: { fontSize: 16, fontWeight: '700', color: theme.navy },
   muted: { color: theme.muted, fontSize: 13, lineHeight: 19, marginTop: 5 },
   button: { backgroundColor: theme.navy, borderRadius: 10, padding: 13, alignItems: 'center', marginTop: 16 },
   buttonText: { color: theme.white, fontWeight: '700', fontSize: 15 },
+  compactLink:{flexDirection:'row',alignItems:'center',backgroundColor:theme.white,borderWidth:1,borderColor:theme.border,borderRadius:14,paddingHorizontal:16,paddingVertical:12,marginBottom:10},
+  compactLinkContent:{flex:1},compactLinkTitle:{fontSize:16,fontWeight:'700',color:theme.navy},compactLinkSub:{fontSize:13,color:theme.muted,marginTop:3},
+  chevron:{fontSize:28,color:theme.teal,marginLeft:12},
+  modalBackdrop:{flex:1,justifyContent:'center',padding:20,backgroundColor:'rgba(0,0,0,0.55)'},
+  modalPanel:{backgroundColor:theme.background,borderRadius:20,padding:18,maxHeight:'78%'},
+  modalHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8},
+  modalScroll:{flexGrow:0},modalList:{paddingBottom:12},
   disclaimer: { color: theme.muted, fontSize: 12, marginTop: 12, lineHeight: 19 },
 });
