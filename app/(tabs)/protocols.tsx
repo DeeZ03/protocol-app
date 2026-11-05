@@ -262,7 +262,7 @@ export default function Protocols() {
                 <Text style={styles.detailsLabel}>{t('protocols.compound')}</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.compound}</Text>
                 <Text style={styles.detailsLabel}>{t('protocols.schedule')}</Text>
-                <Text style={styles.detailsValue}>{selectedProtocol.days?.length ? selectedProtocol.days.map(day => localizedDays[day]).join(', ') + ' at ' + selectedProtocol.time : 'No scheduled days'}</Text>
+                <Text style={styles.detailsValue}>{selectedProtocol.days?.length ? selectedProtocol.days.map(day => localizedDays[day]).join(', ') + t('protocols.at') + selectedProtocol.time : t('protocols.noDays')}</Text>
                 <Text style={styles.detailsLabel}>{t('protocols.startDate')}</Text>
                 <Text style={styles.detailsValue}>{selectedProtocol.startDate || t('protocols.notSet')}</Text>
                 <Text style={styles.detailsLabel}>{t('protocols.duration')}</Text>
