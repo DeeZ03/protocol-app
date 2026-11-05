@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { useLanguage } from '../i18n';
+import { useLanguage, type TranslationKey } from '../i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Entry = { name: string; aliases?: string; tags: string[]; conditions?: string[] };
@@ -163,6 +163,7 @@ type Props = {visible:boolean; selected:string; onSelect:(name:string)=>void; on
 export default function CompoundSelector({visible,selected,onSelect,onClose}:Props) {
  const insets = useSafeAreaInsets();
  const {t} = useLanguage();
+ const infoText = (name:string, field:'description'|'route') => t(`compound.info.${name}.${field}` as TranslationKey);
  const categoryName = (name:string) => ({'Peptides':t('compound.peptides'),'TRT & Hormones':t('compound.hormones'),'PEDs & PCT':t('compound.peds'),'Medications':t('compound.medications'),'Health Conditions':t('compound.conditions'),'Manual Entry':t('compound.manual')} as Record<string,string>)[name] || name;
  const categorySubtitle = (name:string) => ({'Peptides':t('compound.subPeptides'),'TRT & Hormones':t('compound.subHormones'),'PEDs & PCT':t('compound.subPeds'),'Medications':t('compound.subMedications'),'Health Conditions':t('compound.subConditions'),'Manual Entry':t('compound.subManual')} as Record<string,string>)[name] || name;
  const [infoEntry,setInfoEntry]=useState<Entry | null>(null);
@@ -194,7 +195,7 @@ export default function CompoundSelector({visible,selected,onSelect,onClose}:Pro
     <Text style={styles.footer}>{t('compound.footer')}</Text>
    </ScrollView>
   </View>
-  <Modal visible={!!infoEntry} transparent animationType="fade" onRequestClose={()=>setInfoEntry(null)}><View style={styles.infoBackdrop}><View style={styles.infoSheet}><View style={styles.infoHeader}><Text style={styles.section}>{infoEntry?.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('compound.closeInfo')} onPress={()=>setInfoEntry(null)}><Ionicons name="close" size={26} color={theme.navy}/></Pressable></View><Text style={styles.note}>{infoEntry && (compoundInfo[infoEntry.name]?.description || t('compound.unknown'))}</Text><View style={styles.routeRow}><Ionicons name={infoEntry ? (compoundInfo[infoEntry.name]?.icon || 'help-circle-outline') : 'help-circle-outline'} size={22} color={theme.teal}/><Text style={styles.subtitle}>{infoEntry && (compoundInfo[infoEntry.name]?.route || t('compound.routeUnknown'))}</Text></View><Text style={styles.footer}>{t('compound.infoFooter')}</Text><Pressable style={styles.primary} onPress={()=>setInfoEntry(null)}><Text style={styles.primaryText}>{t('compound.close')}</Text></Pressable></View></View></Modal>
+  <Modal visible={!!infoEntry} transparent animationType="fade" onRequestClose={()=>setInfoEntry(null)}><View style={styles.infoBackdrop}><View style={styles.infoSheet}><View style={styles.infoHeader}><Text style={styles.section}>{infoEntry?.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('compound.closeInfo')} onPress={()=>setInfoEntry(null)}><Ionicons name="close" size={26} color={theme.navy}/></Pressable></View><Text style={styles.note}>{infoEntry && (compoundInfo[infoEntry.name] ? infoText(infoEntry.name, 'description') : t('compound.unknown'))}</Text><View style={styles.routeRow}><Ionicons name={infoEntry ? (compoundInfo[infoEntry.name]?.icon || 'help-circle-outline') : 'help-circle-outline'} size={22} color={theme.teal}/><Text style={styles.subtitle}>{infoEntry && (compoundInfo[infoEntry.name] ? infoText(infoEntry.name, 'route') : t('compound.routeUnknown'))}</Text></View><Text style={styles.footer}>{t('compound.infoFooter')}</Text><Pressable style={styles.primary} onPress={()=>setInfoEntry(null)}><Text style={styles.primaryText}>{t('compound.close')}</Text></Pressable></View></View></Modal>
  </Modal>;
 }
 const styles=StyleSheet.create({
