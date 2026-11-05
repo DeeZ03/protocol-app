@@ -339,6 +339,6 @@ export const enGB = {
     'compound.condition.ADHD': "ADHD",
     'compound.condition.Atrial fibrillation': "Atrial fibrillation",
     'compound.condition.Epilepsy': "Epilepsy",
-    'compound.condition.Parkinson's disease': "Parkinson's disease",
-    'compound.condition.Alzheimer's disease': "Alzheimer's disease",
+    "compound.condition.Parkinson's disease": "Parkinson's disease",
+    "compound.condition.Alzheimer's disease": "Alzheimer's disease",
 } as const;
