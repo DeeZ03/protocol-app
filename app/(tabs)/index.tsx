@@ -73,7 +73,7 @@ export default function Dashboard() {
   const dueToday = protocols.filter(item => scheduledToday(item, today)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   const completedToday = dueToday.filter(item => completions.some(entry => entry.protocolId === item.id && entry.date === dateKey)).length;
   const withoutDays = protocols.filter(item => !Array.isArray(item.days) || item.days.length === 0).length;
-  const history = completions.slice().sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, 10);
+  const history = completions.slice().sort((a, b) => b.completedAt.localeCompare(a.completedAt));
 
   const latestReading = (marker: string) => healthReadings.filter(item => item.marker === marker && Number.isFinite(item.value)).sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))[0];
   const latestWeight = latestReading('weight');
