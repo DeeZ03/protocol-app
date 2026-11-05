@@ -128,10 +128,6 @@ export default function Dashboard() {
       </View>
       <View style={[styles.card, highlightedId && dueToday.some(item => item.id === highlightedId) && styles.highlightedCard]}>
         <Text style={styles.cardTitle}>{t('dashboard.scheduled')}</Text>
-        <Text style={styles.muted}>{today.toLocaleDateString(language==='es'?'es-ES':'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
-        {!loading && !error && dueToday.length > 0 && (
-          <Text style={styles.progress}>{completedToday} {t('dashboard.of')} {dueToday.length} {t('dashboard.completed')}</Text>
-        )}
         {loading ? <Text style={styles.body}>{t('dashboard.loading')}</Text> :
           error ? <Text style={styles.body}>{t('dashboard.loadError')}</Text> :
           dueToday.length === 0 ? <Text style={[styles.body, styles.topGap]}>{t('dashboard.noneToday')}</Text> :
@@ -221,9 +217,9 @@ const styles = StyleSheet.create({
   page: { padding: 20, paddingBottom: 36, backgroundColor: theme.background },
   eyebrow: { color: theme.teal, fontWeight: '800', letterSpacing: 1.4, fontSize: 12, marginBottom: 12 },
   heading: { fontSize: 30, fontWeight: '800', color: theme.navy },
-  subtitle: { color: theme.slate, fontSize: 16, marginTop: 8, marginBottom: 24, lineHeight: 23 },
-  overviewCard: { padding: 20, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, marginBottom: 18 },
+  subtitle: { color: theme.slate, fontSize: 16, marginTop: 8, marginBottom: 18, lineHeight: 23 },
+  overviewCard: { padding: 18, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, marginBottom: 12 },
   summaryMetric: { flex: 1, alignItems: 'center' },
   summaryNumber: { fontSize: 30, fontWeight: '800', color: theme.navy },
   summaryLabel: { color: theme.slate, fontSize: 12, marginTop: 4, textAlign: 'center' },
@@ -231,7 +227,7 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: theme.teal, borderRadius: 8 },
   progressCaption: { color: theme.slate, fontSize: 13, marginTop: 9 },
   healthRow: { flexDirection: 'row', gap: 8 },
-  healthMetric: { flex: 1, minWidth: 0, paddingVertical: 12 },
+  healthMetric: { flex: 1, minWidth: 0, paddingVertical: 6 },
   healthLabel: { color: theme.slate, fontSize: 12, marginBottom: 8 },
   healthValue: { color: theme.navy, fontSize: 16, fontWeight: '800' },
   inlineLink: { alignSelf: 'flex-start', paddingVertical: 10 },
@@ -239,7 +235,7 @@ const styles = StyleSheet.create({
   quickRow: { flexDirection: 'row', gap: 10 },
   quickButton: { flex: 1, backgroundColor: theme.navy, padding: 14, borderRadius: 10, alignItems: 'center' },
   quickText: { color: theme.white, fontWeight: '700', textAlign: 'center' },
-  card: { padding: 20, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
+  card: { padding: 18, borderRadius: 16, backgroundColor: theme.white, borderColor: theme.border, borderWidth: 1, marginBottom: 16 },
   cardTitle: { fontSize: 18, fontWeight: '700', color: theme.navy, marginBottom: 12 },
   body: { color: theme.text, fontSize: 15, lineHeight: 22 },
   topGap: { marginTop: 12 },
@@ -250,7 +246,6 @@ const styles = StyleSheet.create({
   completedButton: { backgroundColor: theme.navy },
   completionText: { color: theme.navy, fontWeight: '700' },
   completedText: { color: theme.white },
-  progress: { color: theme.teal, fontWeight: '800', fontSize: 17, marginTop: 14 },
   count: { fontSize: 38, fontWeight: '800', color: theme.navy },
   protocolRow: { borderTopWidth: 1, borderTopColor: theme.border, paddingVertical: 12 },
   highlightedCard: { borderColor: theme.teal, borderWidth: 2 },
