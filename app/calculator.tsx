@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { theme } from '../src/theme';
 import { useLanguage } from '../src/i18n';
 
@@ -8,7 +8,8 @@ const positive = (text: string) => { const n = Number(text.replace(',', '.')); r
 export default function Calculator() {
   const { language } = useLanguage();
   const es = language === 'es';
-  const [mode,setMode] = useState<'peptide'|'solution'>('peptide');
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const [mode,setMode] = useState<'peptide'|'solution'>(params.mode === 'solution' ? 'solution' : 'peptide');
   const [strength,setStrength] = useState('');
   const [diluent,setDiluent] = useState('');
   const [dose,setDose] = useState('');
