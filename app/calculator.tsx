@@ -68,12 +68,17 @@ export default function Calculator() {
     <Text style={styles.hint}>{es?'Convierte cantidades prescritas a volumen. No recomienda dosis ni frecuencia.':'Convert prescribed amounts into volume. This does not recommend doses or schedules.'}</Text>
     <View style={styles.switchRow}><Pressable style={[styles.switchButton,mode==='peptide'&&styles.active]} onPress={()=>setMode('peptide')}><Text style={[styles.switchText,mode==='peptide'&&styles.activeText]}>{es?'Péptido':'Peptide'}</Text></Pressable><Pressable style={[styles.switchButton,mode==='solution'&&styles.active]} onPress={()=>setMode('solution')}><Text style={[styles.switchText,mode==='solution'&&styles.activeText]}>{es?'Solución preparada':'Ready-mixed solution'}</Text></Pressable></View>
     {mode==='peptide'?<View style={styles.card}><Text style={styles.title}>{es?'Péptido reconstituido':'Reconstituted peptide'}</Text>
+      <Text style={styles.label}>{es?'Capacidad de la jeringa':'Syringe capacity'}</Text>
+      <View style={styles.switchRow}>{(['0.3','0.5','1'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:syringe===v}} style={[styles.switchButton,syringe===v&&styles.active]} onPress={()=>setSyringe(v)}><Text style={[styles.switchText,syringe===v&&styles.activeText]}>{v} mL</Text></Pressable>)}</View>
+      <Text style={styles.hint}>{es?'La capacidad solo cambia la guía visual, no el volumen calculado.':'Capacity changes the visual guide only, not the calculated volume.'}</Text>
       <Text style={styles.label}>{es?'Cantidad del vial':'Vial amount'} · {es?'selección rápida':'quick select'}</Text>
-      <View style={styles.presetRow}>{['5','10','15'].map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:strength===value}} style={[styles.preset, strength===value&&styles.active]} onPress={()=>setStrength(value)}><Text style={[styles.presetText,strength===value&&styles.activeText]}>{value} mg</Text></Pressable>)}</View>
+      <View style={styles.presetRow}>{['5','10','15','20'].map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:strength===value}} style={[styles.preset, strength===value&&styles.active]} onPress={()=>setStrength(value)}><Text style={[styles.presetText,strength===value&&styles.activeText]}>{value} mg</Text></Pressable>)}</View>
       {field(es?'Cantidad total en el vial':'Total amount in vial',strength,setStrength,'mg')}
       <Text style={styles.label}>{es?'Diluyente':'Diluent'} · {es?'selección rápida':'quick select'}</Text>
       <View style={styles.presetRow}>{['1','2','3','5'].map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:diluent===value}} style={[styles.preset,diluent===value&&styles.active]} onPress={()=>setDiluent(value)}><Text style={[styles.presetText,diluent===value&&styles.activeText]}>{value} mL</Text></Pressable>)}</View>
       {field(es?'Volumen de diluyente':'Diluent volume',diluent,setDiluent,'mL')}
+      <Text style={styles.label}>{es?'Cantidad prescrita · selección rápida':'Prescribed amount · quick select'}</Text>
+      <View style={styles.presetRow}>{['50','100','250','500'].map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:dose===value}} style={[styles.preset,dose===value&&styles.active]} onPress={()=>setDose(value)}><Text style={[styles.presetText,dose===value&&styles.activeText]}>{value} mcg</Text></Pressable>)}</View>
       {field(es?'Cantidad prescrita por administración':'Prescribed amount per administration',dose,setDose,'mcg')}
       {peptideConcentration !== null && <View style={styles.volumeSummary}>
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'CONCENTRACIÓN':'CONCENTRATION'}</Text><Text style={styles.metricValue}>{fmt(peptideConcentration)} <Text style={styles.metricUnit}>mg/mL</Text></Text></View>
@@ -90,13 +95,14 @@ export default function Calculator() {
       <Text style={styles.hint}>{es?'Una etiqueta que solo indica mg por vial no basta: se necesita también el volumen total. Introduce mg/mL, no mg por vial.':'A label stating only mg per vial is not enough: total vial volume is also required. Enter mg/mL, not mg per vial.'}</Text>
     </View>}
     {displayMl !== null && displayMl > 0 && <View style={styles.card}>
-      <Text style={styles.title}>{es?'Guía visual de volumen':'Volume visual guide'}</Text>
+      <Text style={styles.title}>{es?'Lectura visual de la jeringa':'Visual syringe reading'}</Text>
       <Text style={styles.hint}>{es?'Selecciona la capacidad de la jeringa para comparar el volumen calculado.':'Select syringe capacity to compare the calculated volume.'}</Text>
-      <View style={styles.switchRow}>{(['0.3','0.5','1'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:syringe===v}} style={[styles.switchButton,syringe===v&&styles.active]} onPress={()=>setSyringe(v)}><Text style={[styles.switchText,syringe===v&&styles.activeText]}>{v} mL</Text></Pressable>)}</View>
+
       <View style={styles.volumeSummary}>
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'VOLUMEN':'VOLUME'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl)} <Text style={styles.metricUnit}>mL</Text></Text></View>
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'EQUIVALENTE U-100':'U-100 EQUIVALENT'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl*100)} <Text style={styles.metricUnit}>{es?'unidades':'units'}</Text></Text></View>
       </View>
+      <Text style={styles.resultSub}>{es?'Lectura equivalente en U-100':'Equivalent U-100 reading'}: {preciseVolume(displayMl*100)} {es?'unidades':'units'}</Text>
       <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/></View>
       <View style={styles.tickRow}>{Array.from({length:11},(_,i)=><View key={i} style={styles.tick}/>)}</View>
       <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{fmt(syringeCapacity/2)} mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
