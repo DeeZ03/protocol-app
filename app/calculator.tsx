@@ -16,10 +16,14 @@ export default function Calculator() {
   const [concentration,setConcentration] = useState('');
   const [monthly,setMonthly] = useState('');
   const [frequency,setFrequency] = useState('');
+  const [syringe,setSyringe] = useState<'0.3'|'0.5'|'1'>('1');
   const n = positive(strength), d = positive(diluent), target = positive(dose), c = positive(concentration), m = positive(monthly), f = positive(frequency);
   const peptideMl = n !== null && d !== null && target !== null ? (target * d) / (n * 1000) : null;
   const monthlyMl = c && m ? m/c : null;
   const perInjection = monthlyMl && f ? monthlyMl/f : null;
+  const displayMl = mode === 'peptide' ? peptideMl : perInjection;
+  const syringeCapacity = Number(syringe);
+  const syringeFraction = displayMl !== null ? Math.min(1, Math.max(0, displayMl / syringeCapacity)) : 0;
   const invalidPeptide = peptideMl !== null && d !== null && peptideMl > d;
   const fmt = (value: number) => Number(value.toFixed(4)).toString();
   const field = (label: string,value:string,set:(s:string)=>void,unit:string) => <View style={styles.field}><Text style={styles.label}>{label} ({unit})</Text><TextInput keyboardType="decimal-pad" value={value} onChangeText={set} placeholder="0" style={styles.input} accessibilityLabel={label}/></View>;
@@ -40,9 +44,20 @@ export default function Calculator() {
       {monthlyMl!==null&&<View style={styles.result}><Text style={styles.resultLabel}>{es?'Volumen mensual':'Monthly volume'}</Text><Text style={styles.resultValue}>{fmt(monthlyMl)} mL</Text>{perInjection!==null&&<Text style={styles.resultSub}>{es?'Volumen por administración':'Volume per administration'}: {fmt(perInjection)} mL</Text>}</View>}
       <Text style={styles.hint}>{es?'Una etiqueta que solo indica mg por vial no basta: se necesita también el volumen total. Introduce mg/mL, no mg por vial.':'A label stating only mg per vial is not enough: total vial volume is also required. Enter mg/mL, not mg per vial.'}</Text>
     </View>}
+    {displayMl !== null && displayMl > 0 && <View style={styles.card}>
+      <Text style={styles.title}>{es?'Guía visual de volumen':'Volume visual guide'}</Text>
+      <Text style={styles.hint}>{es?'Selecciona la capacidad de la jeringa para comparar el volumen calculado.':'Select syringe capacity to compare the calculated volume.'}</Text>
+      <View style={styles.switchRow}>{(['0.3','0.5','1'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:syringe===v}} style={[styles.switchButton,syringe===v&&styles.active]} onPress={()=>setSyringe(v)}><Text style={[styles.switchText,syringe===v&&styles.activeText]}>{v} mL</Text></Pressable>)}</View>
+      <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:(syringeFraction*100)+'%'}]}/></View>
+      <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
+      <Text style={styles.resultSub}>{fmt(displayMl)} mL {es?'calculados':'calculated'} · {fmt(displayMl*100)} {es?'unidades U-100 (solo si corresponde)':'U-100 units (only if applicable)'}</Text>
+      {displayMl>syringeCapacity&&<Text style={styles.warning}>{es?'El volumen supera la capacidad seleccionada.':'Volume exceeds selected syringe capacity.'}</Text>}
+      <Text style={styles.hint}>{es?'Esquema orientativo, no una imagen de graduaciones reales. Comprueba la escala de tu jeringa.':'Illustrative bar, not actual syringe graduations. Verify the scale on your syringe.'}</Text>
+    </View>}
     <Text style={styles.footer}>{es?'Herramienta matemática, no recomendación médica. Verifica la etiqueta, la prescripción y el tipo de jeringa con un profesional sanitario.':'Mathematical tool, not medical advice. Confirm the label, prescription and syringe type with a qualified healthcare professional.'}</Text>
   </ScrollView></>;
 }
 const styles=StyleSheet.create({
+ syringeTrack:{height:24,borderRadius:12,backgroundColor:'#E4EBF0',overflow:'hidden',borderWidth:1,borderColor:theme.border},syringeFill:{height:'100%',backgroundColor:theme.teal},scaleRow:{flexDirection:'row',justifyContent:'space-between'},scaleText:{color:theme.slate,fontSize:12},
  page:{padding:20,paddingBottom:50,backgroundColor:theme.background,gap:16},heading:{fontSize:26,fontWeight:'800',color:theme.navy},hint:{fontSize:13,color:theme.muted,lineHeight:20},switchRow:{flexDirection:'row',gap:8},switchButton:{flex:1,borderWidth:1,borderColor:theme.border,borderRadius:12,padding:12,alignItems:'center'},active:{backgroundColor:theme.navy,borderColor:theme.navy},switchText:{color:theme.navy,fontWeight:'700',textAlign:'center'},activeText:{color:theme.white},card:{backgroundColor:theme.white,borderRadius:16,borderWidth:1,borderColor:theme.border,padding:18,gap:14},title:{fontSize:19,fontWeight:'800',color:theme.navy},field:{gap:6},label:{color:theme.navy,fontWeight:'600',fontSize:14},input:{borderWidth:1,borderColor:theme.border,borderRadius:10,padding:13,fontSize:17,color:theme.navy},result:{padding:16,backgroundColor:'#E6F7F7',borderRadius:12,gap:6},resultLabel:{color:theme.navy,fontWeight:'600'},resultValue:{color:theme.navy,fontWeight:'800',fontSize:28},resultSub:{color:theme.navy,fontWeight:'700'},warning:{color:'#B42318',fontWeight:'700'},footer:{fontSize:12,color:theme.muted,lineHeight:19}
 });
