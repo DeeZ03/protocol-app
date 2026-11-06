@@ -80,7 +80,7 @@ export default function Calculator() {
       <Text style={styles.title}>{es?'Guía visual de volumen':'Volume visual guide'}</Text>
       <Text style={styles.hint}>{es?'Selecciona la capacidad de la jeringa para comparar el volumen calculado.':'Select syringe capacity to compare the calculated volume.'}</Text>
       <View style={styles.switchRow}>{(['0.3','0.5','1'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:syringe===v}} style={[styles.switchButton,syringe===v&&styles.active]} onPress={()=>setSyringe(v)}><Text style={[styles.switchText,syringe===v&&styles.activeText]}>{v} mL</Text></Pressable>)}</View>
-      <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:(syringeFraction*100)+'%'}]}/></View>
+      <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/></View>
       <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
       <Text style={styles.resultSub}>{fmt(displayMl)} mL {es?'calculados':'calculated'} · {fmt(displayMl*100)} {es?'unidades U-100 (solo si corresponde)':'U-100 units (only if applicable)'}</Text>
       {displayMl>syringeCapacity&&<Text style={styles.warning}>{es?'El volumen supera la capacidad seleccionada.':'Volume exceeds selected syringe capacity.'}</Text>}
