@@ -32,8 +32,8 @@ export default function Calculator() {
   const invalidPeptide = peptideMl !== null && d !== null && peptideMl > d;
   const validResult = mode === 'peptide' ? peptideMl !== null && !invalidPeptide : perInjection !== null;
   const summary = mode === 'peptide'
-    ? `Peptide · vial ${strength} mg · diluent ${diluent} mL · prescribed ${dose} mcg · calculated ${peptideMl !== null ? Number(peptideMl.toFixed(4)) : ''} mL`
-    : `Ready-mixed · ${concentration} mg/mL · ${monthly} mg/month · ${frequency} administrations/month · calculated ${perInjection !== null ? Number(perInjection.toFixed(4)) : ''} mL/administration`;
+    ? `Peptide · vial ${strength} mg · diluent ${diluent} mL · prescribed ${dose} mcg · calculated ${peptideMl !== null ? peptideMl.toPrecision(8) : ''} mL`
+    : `Ready-mixed · ${concentration} mg/mL · ${monthly} mg/month · ${frequency} administrations/month · calculated ${perInjection !== null ? perInjection.toPrecision(8) : ''} mL/administration`;
   const chooseExisting = async () => {
     try {
       const raw = await AsyncStorage.getItem('protocol-app:test-protocols:v1');
@@ -58,6 +58,8 @@ export default function Calculator() {
     finally { setSavingTo(null); }
   };
   const fmt = (value: number) => Number(value.toFixed(4)).toString();
+  const preciseVolume = (value: number) => value > 0 && value < 0.0001 ? '<0.0001' : fmt(value);
+  const tinyVolume = displayMl !== null && displayMl > 0 && displayMl < 0.001;
   const field = (label: string,value:string,set:(s:string)=>void,unit:string) => <View style={styles.field}><Text style={styles.label}>{label} ({unit})</Text><TextInput keyboardType="decimal-pad" value={value} onChangeText={set} placeholder="0" style={styles.input} accessibilityLabel={label}/></View>;
   return <><Stack.Screen options={{title:es?'Calculadora':'Calculator',headerStyle:{backgroundColor:theme.navy},headerTintColor:theme.white}}/><ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <Text style={styles.heading}>{es?'Calculadora de concentraciones':'Concentration calculator'}</Text>
@@ -71,13 +73,13 @@ export default function Calculator() {
       <View style={styles.presetRow}>{['1','2','3','5'].map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:diluent===value}} style={[styles.preset,diluent===value&&styles.active]} onPress={()=>setDiluent(value)}><Text style={[styles.presetText,diluent===value&&styles.activeText]}>{value} mL</Text></Pressable>)}</View>
       {field(es?'Volumen de diluyente':'Diluent volume',diluent,setDiluent,'mL')}
       {field(es?'Cantidad prescrita por administración':'Prescribed amount per administration',dose,setDose,'mcg')}
-      {peptideMl!==null && <View style={styles.result}><Text style={styles.resultLabel}>{es?'Volumen calculado':'Calculated volume'}</Text><Text style={styles.resultValue}>{fmt(peptideMl)} mL</Text><Text style={styles.hint}>{es?'En una jeringa U-100, equivale a':'On a U-100 syringe, equivalent to'} {fmt(peptideMl*100)} {es?'unidades':'units'}.</Text>{invalidPeptide&&<Text style={styles.warning}>{es?'La cantidad supera el contenido del vial. Revisa los datos.':'Amount exceeds the vial contents. Check the inputs.'}</Text>}</View>}
+      {peptideMl!==null && <View style={styles.result}><Text style={styles.resultLabel}>{es?'Volumen calculado':'Calculated volume'}</Text><Text style={styles.resultValue}>{preciseVolume(peptideMl)} mL</Text><Text style={styles.hint}>{es?'En una jeringa U-100, equivale a':'On a U-100 syringe, equivalent to'} {fmt(peptideMl*100)} {es?'unidades':'units'}.</Text>{invalidPeptide&&<Text style={styles.warning}>{es?'La cantidad supera el contenido del vial. Revisa los datos.':'Amount exceeds the vial contents. Check the inputs.'}</Text>}</View>}
       <Text style={styles.hint}>{es?'Introduce la cantidad del vial en mg y la cantidad prescrita en mcg.':'Enter vial strength in mg and prescribed amount in mcg. Do not confuse mg and mcg.'}</Text>
     </View>:<View style={styles.card}><Text style={styles.title}>{es?'Medicamento en solución':'Ready-mixed medication'}</Text>
       {field(es?'Concentración de la etiqueta':'Label concentration',concentration,setConcentration,'mg/mL')}
       {field(es?'Cantidad mensual prescrita':'Prescribed monthly amount',monthly,setMonthly,'mg')}
       {field(es?'Número prescrito de administraciones al mes (opcional)':'Prescribed administrations per month (optional)',frequency,setFrequency,es?'veces':'times')}
-      {monthlyMl!==null&&<View style={styles.result}><Text style={styles.resultLabel}>{es?'Volumen mensual':'Monthly volume'}</Text><Text style={styles.resultValue}>{fmt(monthlyMl)} mL</Text>{perInjection!==null&&<Text style={styles.resultSub}>{es?'Volumen por administración':'Volume per administration'}: {fmt(perInjection)} mL</Text>}</View>}
+      {monthlyMl!==null&&<View style={styles.result}><Text style={styles.resultLabel}>{es?'Volumen mensual':'Monthly volume'}</Text><Text style={styles.resultValue}>{fmt(monthlyMl)} mL</Text>{perInjection!==null&&<Text style={styles.resultSub}>{es?'Volumen por administración':'Volume per administration'}: {preciseVolume(perInjection)} mL</Text>}</View>}
       <Text style={styles.hint}>{es?'Una etiqueta que solo indica mg por vial no basta: se necesita también el volumen total. Introduce mg/mL, no mg por vial.':'A label stating only mg per vial is not enough: total vial volume is also required. Enter mg/mL, not mg per vial.'}</Text>
     </View>}
     {displayMl !== null && displayMl > 0 && <View style={styles.card}>
@@ -85,13 +87,14 @@ export default function Calculator() {
       <Text style={styles.hint}>{es?'Selecciona la capacidad de la jeringa para comparar el volumen calculado.':'Select syringe capacity to compare the calculated volume.'}</Text>
       <View style={styles.switchRow}>{(['0.3','0.5','1'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:syringe===v}} style={[styles.switchButton,syringe===v&&styles.active]} onPress={()=>setSyringe(v)}><Text style={[styles.switchText,syringe===v&&styles.activeText]}>{v} mL</Text></Pressable>)}</View>
       <View style={styles.volumeSummary}>
-        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'VOLUMEN':'VOLUME'}</Text><Text style={styles.metricValue}>{fmt(displayMl)} <Text style={styles.metricUnit}>mL</Text></Text></View>
-        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'EQUIVALENTE U-100':'U-100 EQUIVALENT'}</Text><Text style={styles.metricValue}>{fmt(displayMl*100)} <Text style={styles.metricUnit}>{es?'unidades':'units'}</Text></Text></View>
+        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'VOLUMEN':'VOLUME'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl)} <Text style={styles.metricUnit}>mL</Text></Text></View>
+        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'EQUIVALENTE U-100':'U-100 EQUIVALENT'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl*100)} <Text style={styles.metricUnit}>{es?'unidades':'units'}</Text></Text></View>
       </View>
       <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/></View>
       <View style={styles.tickRow}>{Array.from({length:11},(_,i)=><View key={i} style={styles.tick}/>)}</View>
       <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{fmt(syringeCapacity/2)} mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
       <Text style={styles.hint}>{es?'El equivalente en unidades solo corresponde a jeringas U-100.':'The units equivalent applies only to U-100 syringes.'}</Text>
+      {tinyVolume&&<Text style={styles.warning}>{es?'El volumen calculado es muy pequeño. No redondees a cero; confirma que puede medirse con precisión antes de usarlo.':'Calculated volume is very small. Do not round to zero; confirm it can be measured accurately before use.'}</Text>}
       {displayMl>syringeCapacity&&<Text style={styles.warning}>{es?'El volumen supera la capacidad seleccionada.':'Volume exceeds selected syringe capacity.'}</Text>}
       <Text style={styles.hint}>{es?'Esquema orientativo, no una imagen de graduaciones reales. Comprueba la escala de tu jeringa.':'Illustrative bar, not actual syringe graduations. Verify the scale on your syringe.'}</Text>
     </View>}
