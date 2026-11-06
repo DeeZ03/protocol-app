@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View, Pressable, Modal } from 'react-native';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../src/theme';
 import { useLanguage } from '../src/i18n';
 
 const positive = (text: string) => { const n = Number(text.replace(',', '.')); return text.trim() !== '' && Number.isFinite(n) && n > 0 ? n : null; };
 export default function Calculator() {
+  const router = useRouter();
+  const [pickerOpen,setPickerOpen] = useState(false);
+  const [savedProtocols,setSavedProtocols] = useState<{id:string;name:string;calculation?:string}[]>([]);
+  const [savingTo,setSavingTo] = useState<string|null>(null);
   const { language } = useLanguage();
   const es = language === 'es';
   const params = useLocalSearchParams<{ mode?: string }>();
@@ -25,6 +30,33 @@ export default function Calculator() {
   const syringeCapacity = Number(syringe);
   const syringeFraction = displayMl !== null ? Math.min(1, Math.max(0, displayMl / syringeCapacity)) : 0;
   const invalidPeptide = peptideMl !== null && d !== null && peptideMl > d;
+  const validResult = mode === 'peptide' ? peptideMl !== null && !invalidPeptide : perInjection !== null;
+  const summary = mode === 'peptide'
+    ? `Peptide · vial ${strength} mg · diluent ${diluent} mL · prescribed ${dose} mcg · calculated ${peptideMl !== null ? Number(peptideMl.toFixed(4)) : ''} mL`
+    : `Ready-mixed · ${concentration} mg/mL · ${monthly} mg/month · ${frequency} administrations/month · calculated ${perInjection !== null ? Number(perInjection.toFixed(4)) : ''} mL/administration`;
+  const chooseExisting = async () => {
+    try {
+      const raw = await AsyncStorage.getItem('protocol-app:test-protocols:v1');
+      const records = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(records)) throw new Error('Invalid protocol data');
+      setSavedProtocols(records.filter((v): v is {id:string;name:string;calculation?:string} => typeof v?.id === 'string' && typeof v?.name === 'string'));
+      setPickerOpen(true);
+    } catch { Alert.alert(es?'Error':'Error',es?'No se pudieron cargar los protocolos.':'Could not load saved protocols.'); }
+  };
+  const saveExisting = async (id:string) => {
+    if (savingTo) return;
+    setSavingTo(id);
+    try {
+      const raw = await AsyncStorage.getItem('protocol-app:test-protocols:v1');
+      const records = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(records) || !records.some(v=>v?.id===id)) throw new Error('Missing protocol');
+      const next = records.map(v=>v.id===id?{...v,calculation:summary}:v);
+      await AsyncStorage.setItem('protocol-app:test-protocols:v1',JSON.stringify(next));
+      setPickerOpen(false);
+      Alert.alert(es?'Guardado':'Saved',es?'Cálculo añadido al protocolo.':'Calculation added to protocol.');
+    } catch { Alert.alert(es?'Error':'Error',es?'No se pudo guardar el cálculo.':'Could not save the calculation.'); }
+    finally { setSavingTo(null); }
+  };
   const fmt = (value: number) => Number(value.toFixed(4)).toString();
   const field = (label: string,value:string,set:(s:string)=>void,unit:string) => <View style={styles.field}><Text style={styles.label}>{label} ({unit})</Text><TextInput keyboardType="decimal-pad" value={value} onChangeText={set} placeholder="0" style={styles.input} accessibilityLabel={label}/></View>;
   return <><Stack.Screen options={{title:es?'Calculadora':'Calculator',headerStyle:{backgroundColor:theme.navy},headerTintColor:theme.white}}/><ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
@@ -54,10 +86,24 @@ export default function Calculator() {
       {displayMl>syringeCapacity&&<Text style={styles.warning}>{es?'El volumen supera la capacidad seleccionada.':'Volume exceeds selected syringe capacity.'}</Text>}
       <Text style={styles.hint}>{es?'Esquema orientativo, no una imagen de graduaciones reales. Comprueba la escala de tu jeringa.':'Illustrative bar, not actual syringe graduations. Verify the scale on your syringe.'}</Text>
     </View>}
+    {validResult && <View style={styles.card}>
+      <Text style={styles.title}>{es?'Guardar en protocolos':'Save to protocols'}</Text>
+      <Text style={styles.hint}>{es?'Revisa los datos antes de guardarlos. Guardar no cambia la pauta ni los recordatorios.':'Review the inputs before saving. Saving does not change schedules or reminders.'}</Text>
+      <Pressable style={styles.saveAction} onPress={()=>router.push({pathname:'/(tabs)/protocols',params:{calculation:summary}})}><Text style={styles.saveActionText}>{es?'Añadir a protocolo nuevo':'Add to new protocol'}</Text></Pressable>
+      <Pressable style={styles.outlineAction} onPress={chooseExisting}><Text style={styles.outlineActionText}>{es?'Añadir a protocolo existente':'Add to existing protocol'}</Text></Pressable>
+    </View>}
+    <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={()=>setPickerOpen(false)}><View style={styles.overlay}><Pressable style={StyleSheet.absoluteFill} onPress={()=>setPickerOpen(false)}/><View style={styles.picker}>
+      <Text style={styles.title}>{es?'Seleccionar protocolo':'Select a protocol'}</Text>
+      <Text style={styles.hint}>{es?'Se reemplazará cualquier cálculo anterior del protocolo seleccionado.':'Any previous calculation on the selected protocol will be replaced.'}</Text>
+      <ScrollView style={{maxHeight:320}}>{savedProtocols.map(p=><Pressable key={p.id} style={styles.protocolChoice} disabled={!!savingTo} onPress={()=>Alert.alert(es?'Confirmar':'Confirm',es?`¿Guardar el cálculo en "${p.name}"?`:`Save calculation to "${p.name}"?`,[{text:es?'Cancelar':'Cancel',style:'cancel'},{text:es?'Guardar':'Save',onPress:()=>saveExisting(p.id)}])}><Text style={styles.outlineActionText}>{p.name}</Text></Pressable>)}</ScrollView>
+      {savedProtocols.length===0&&<Text style={styles.hint}>{es?'No hay protocolos guardados.':'No saved protocols yet.'}</Text>}
+      <Pressable onPress={()=>setPickerOpen(false)}><Text style={styles.outlineActionText}>{es?'Cancelar':'Cancel'}</Text></Pressable>
+    </View></View></Modal>
     <Text style={styles.footer}>{es?'Herramienta matemática, no recomendación médica. Verifica la etiqueta, la prescripción y el tipo de jeringa con un profesional sanitario.':'Mathematical tool, not medical advice. Confirm the label, prescription and syringe type with a qualified healthcare professional.'}</Text>
   </ScrollView></>;
 }
 const styles=StyleSheet.create({
  syringeTrack:{height:24,borderRadius:12,backgroundColor:'#E4EBF0',overflow:'hidden',borderWidth:1,borderColor:theme.border},syringeFill:{height:'100%',backgroundColor:theme.teal},scaleRow:{flexDirection:'row',justifyContent:'space-between'},scaleText:{color:theme.slate,fontSize:12},
+ saveAction:{backgroundColor:theme.navy,padding:15,borderRadius:11,alignItems:'center'},saveActionText:{color:theme.white,fontWeight:'700'},outlineAction:{borderWidth:1,borderColor:theme.border,borderRadius:11,padding:15,alignItems:'center'},outlineActionText:{color:theme.navy,fontWeight:'700'},overlay:{flex:1,backgroundColor:'#0009',justifyContent:'center',padding:20},picker:{backgroundColor:theme.white,borderRadius:18,padding:20,gap:15},protocolChoice:{borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:14},
  page:{padding:20,paddingBottom:50,backgroundColor:theme.background,gap:16},heading:{fontSize:26,fontWeight:'800',color:theme.navy},hint:{fontSize:13,color:theme.muted,lineHeight:20},switchRow:{flexDirection:'row',gap:8},switchButton:{flex:1,borderWidth:1,borderColor:theme.border,borderRadius:12,padding:12,alignItems:'center'},active:{backgroundColor:theme.navy,borderColor:theme.navy},switchText:{color:theme.navy,fontWeight:'700',textAlign:'center'},activeText:{color:theme.white},card:{backgroundColor:theme.white,borderRadius:16,borderWidth:1,borderColor:theme.border,padding:18,gap:14},title:{fontSize:19,fontWeight:'800',color:theme.navy},field:{gap:6},label:{color:theme.navy,fontWeight:'600',fontSize:14},input:{borderWidth:1,borderColor:theme.border,borderRadius:10,padding:13,fontSize:17,color:theme.navy},result:{padding:16,backgroundColor:'#E6F7F7',borderRadius:12,gap:6},resultLabel:{color:theme.navy,fontWeight:'600'},resultValue:{color:theme.navy,fontWeight:'800',fontSize:28},resultSub:{color:theme.navy,fontWeight:'700'},warning:{color:'#B42318',fontWeight:'700'},footer:{fontSize:12,color:theme.muted,lineHeight:19}
 });
