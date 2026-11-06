@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
 import { Stack } from 'expo-router';
 import { theme } from '../src/theme';
@@ -16,7 +16,7 @@ export default function Calculator() {
   const [monthly,setMonthly] = useState('');
   const [frequency,setFrequency] = useState('');
   const n = positive(strength), d = positive(diluent), target = positive(dose), c = positive(concentration), m = positive(monthly), f = positive(frequency);
-  const peptideMl = n && d && target ? target / (n*1000/d) : null;
+  const peptideMl = n !== null && d !== null && target !== null ? (target * d) / (n * 1000) : null;
   const monthlyMl = c && m ? m/c : null;
   const perInjection = monthlyMl && f ? monthlyMl/f : null;
   const invalidPeptide = peptideMl !== null && peptideMl > d;
