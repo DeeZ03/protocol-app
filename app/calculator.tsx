@@ -24,6 +24,8 @@ export default function Calculator() {
   const [syringe,setSyringe] = useState<'0.3'|'0.5'|'1'>('1');
   const n = positive(strength), d = positive(diluent), target = positive(dose), c = positive(concentration), m = positive(monthly), f = positive(frequency);
   const peptideMl = n !== null && d !== null && target !== null ? (target * d) / (n * 1000) : null;
+  const peptideConcentration = n !== null && d !== null ? n / d : null;
+  const peptideDoses = n !== null && target !== null ? (n * 1000) / target : null;
   const monthlyMl = c && m ? m/c : null;
   const perInjection = monthlyMl && f ? monthlyMl/f : null;
   const displayMl = mode === 'peptide' ? peptideMl : perInjection;
@@ -73,7 +75,12 @@ export default function Calculator() {
       <View style={styles.presetRow}>{['1','2','3','5'].map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:diluent===value}} style={[styles.preset,diluent===value&&styles.active]} onPress={()=>setDiluent(value)}><Text style={[styles.presetText,diluent===value&&styles.activeText]}>{value} mL</Text></Pressable>)}</View>
       {field(es?'Volumen de diluyente':'Diluent volume',diluent,setDiluent,'mL')}
       {field(es?'Cantidad prescrita por administración':'Prescribed amount per administration',dose,setDose,'mcg')}
+      {peptideConcentration !== null && <View style={styles.volumeSummary}>
+        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'CONCENTRACIÓN':'CONCENTRATION'}</Text><Text style={styles.metricValue}>{fmt(peptideConcentration)} <Text style={styles.metricUnit}>mg/mL</Text></Text></View>
+        {peptideDoses !== null && <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'DOSIS TEÓRICAS':'THEORETICAL DOSES'}</Text><Text style={styles.metricValue}>{fmt(peptideDoses)}</Text></View>}
+      </View>}
       {peptideMl!==null && <View style={styles.result}><Text style={styles.resultLabel}>{es?'Volumen calculado':'Calculated volume'}</Text><Text style={styles.resultValue}>{preciseVolume(peptideMl)} mL</Text><Text style={styles.hint}>{es?'En una jeringa U-100, equivale a':'On a U-100 syringe, equivalent to'} {fmt(peptideMl*100)} {es?'unidades':'units'}.</Text>{invalidPeptide&&<Text style={styles.warning}>{es?'La cantidad supera el contenido del vial. Revisa los datos.':'Amount exceeds the vial contents. Check the inputs.'}</Text>}</View>}
+      {peptideDoses !== null && <Text style={styles.hint}>{es?'El número teórico de dosis no tiene en cuenta pérdidas de preparación ni volumen residual.':'Theoretical dose count does not account for preparation losses or residual volume.'}</Text>}
       <Text style={styles.hint}>{es?'Introduce la cantidad del vial en mg y la cantidad prescrita en mcg.':'Enter vial strength in mg and prescribed amount in mcg. Do not confuse mg and mcg.'}</Text>
     </View>:<View style={styles.card}><Text style={styles.title}>{es?'Medicamento en solución':'Ready-mixed medication'}</Text>
       {field(es?'Concentración de la etiqueta':'Label concentration',concentration,setConcentration,'mg/mL')}
