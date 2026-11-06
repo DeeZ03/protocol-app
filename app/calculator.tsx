@@ -19,7 +19,7 @@ export default function Calculator() {
   const peptideMl = n !== null && d !== null && target !== null ? (target * d) / (n * 1000) : null;
   const monthlyMl = c && m ? m/c : null;
   const perInjection = monthlyMl && f ? monthlyMl/f : null;
-  const invalidPeptide = peptideMl !== null && peptideMl > d;
+  const invalidPeptide = peptideMl !== null && d !== null && peptideMl > d;
   const fmt = (value: number) => Number(value.toFixed(4)).toString();
   const field = (label: string,value:string,set:(s:string)=>void,unit:string) => <View style={styles.field}><Text style={styles.label}>{label} ({unit})</Text><TextInput keyboardType="decimal-pad" value={value} onChangeText={set} placeholder="0" style={styles.input} accessibilityLabel={label}/></View>;
   return <><Stack.Screen options={{title:es?'Calculadora':'Calculator',headerStyle:{backgroundColor:theme.navy},headerTintColor:theme.white}}/><ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
