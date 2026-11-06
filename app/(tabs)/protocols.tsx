@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
@@ -22,6 +22,7 @@ const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 
 export default function Protocols() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { language, t } = useLanguage();
   const localizedDays = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, i + 1).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short' }));
   const durationLabel = (weeks: number) => `${weeks} ${t(weeks === 1 ? 'protocols.week' : 'protocols.weeks')}`;
@@ -225,7 +226,15 @@ export default function Protocols() {
           <Text style={styles.addText}>{t('protocols.add')}</Text>
         </Pressable>
       </View>
-      <Text style={styles.intro}>{t('protocols.intro')}</Text>
+      <View style={styles.calculatorCard}>
+        <View style={styles.calculatorHeading}><Ionicons name="calculator-outline" size={21} color={theme.navy}/><Text style={styles.calculatorTitle}>{language === 'es' ? 'Calculadora de dosis y volumen' : 'Dose & volume calculator'}</Text></View>
+        <Text style={styles.calculatorHint}>{language === 'es' ? 'Calcula el volumen a partir de una cantidad prescrita.' : 'Calculate volume from a prescribed amount.'}</Text>
+        <View style={styles.calculatorActions}>
+          <Pressable accessibilityRole="button" style={styles.calculatorAction} onPress={()=>router.push('/calculator?mode=peptide')}><Ionicons name="flask-outline" size={18} color={theme.navy}/><Text style={styles.calculatorActionText}>{language === 'es' ? 'Péptidos' : 'Peptides'}</Text></Pressable>
+          <Pressable accessibilityRole="button" style={styles.calculatorAction} onPress={()=>router.push('/calculator?mode=solution')}><Ionicons name="medical-outline" size={18} color={theme.navy}/><Text style={styles.calculatorActionText}>{language === 'es' ? 'Inyectables' : 'Injectables'}</Text></Pressable>
+        </View>
+      </View>
+      <View style={styles.savedHeading}><Text style={styles.savedTitle}>{language === 'es' ? 'Protocolos guardados' : 'Saved protocols'}</Text><Text style={styles.savedCount}>{items.length} {language === 'es' ? 'guardados' : 'saved'}</Text></View>
       <FlatList
         data={items}
         keyExtractor={item => item.id}
@@ -243,7 +252,7 @@ export default function Protocols() {
               <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
             </View>
             <Text style={styles.detail} numberOfLines={1}>{item.compound}</Text>
-            <Text style={styles.cardMeta} numberOfLines={1}>{item.days?.length ? item.days.map(day => localizedDays[day]).join(', ') + ' · ' + (item.time || t('protocols.noTime')) : t('protocols.noDays')}  ·  {item.customEndDate ? t('protocols.until') + item.customEndDate : item.durationWeeks ? durationLabel(item.durationWeeks) : t('protocols.indefinite')}</Text>
+
           </Pressable>
         )}
         ListFooterComponent={<Text style={styles.disclaimer}>{t('protocols.disclaimer')}</Text>}
@@ -405,11 +414,17 @@ const styles = StyleSheet.create({
   addText: { color: theme.white, fontWeight: '700', fontSize: 15 },
   intro: { color: theme.slate, marginTop: 12, marginBottom: 18, fontSize: 15 },
   list: { paddingBottom: 40, flexGrow: 1 },
+  calculatorCard:{backgroundColor:theme.white,borderColor:theme.border,borderWidth:1,borderRadius:14,padding:14,marginBottom:15},
+  calculatorHeading:{flexDirection:'row',alignItems:'center',gap:8},calculatorTitle:{color:theme.navy,fontSize:16,fontWeight:'800'},
+  calculatorHint:{color:theme.slate,fontSize:12,marginTop:6,marginBottom:12},
+  calculatorActions:{flexDirection:'row',gap:9},calculatorAction:{flex:1,borderColor:theme.border,borderWidth:1,borderRadius:10,padding:11,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6},
+  calculatorActionText:{color:theme.navy,fontSize:14,fontWeight:'700'},
+  savedHeading:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10},savedTitle:{color:theme.navy,fontWeight:'800',fontSize:16},savedCount:{color:theme.slate,fontSize:13},
   emptyCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, padding: 22 },
-  card: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 9 },
+  card: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 7 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 2 },
-  cardTitle: { color: theme.navy, fontWeight: '700', fontSize: 18, flexShrink: 1 },
-  detail: { color: theme.slate, fontSize: 14, lineHeight: 22, marginTop: 3 },
+  cardTitle: { color: theme.navy, fontWeight: '700', fontSize: 16, flexShrink: 1 },
+  detail: { color: theme.slate, fontSize: 13, lineHeight: 19, marginTop: 2 },
   cardMeta: { color: theme.muted, fontSize: 12, marginTop: 5 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   edit: { color: theme.teal, fontWeight: '700' },
