@@ -84,9 +84,14 @@ export default function Calculator() {
       <Text style={styles.title}>{es?'Guía visual de volumen':'Volume visual guide'}</Text>
       <Text style={styles.hint}>{es?'Selecciona la capacidad de la jeringa para comparar el volumen calculado.':'Select syringe capacity to compare the calculated volume.'}</Text>
       <View style={styles.switchRow}>{(['0.3','0.5','1'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:syringe===v}} style={[styles.switchButton,syringe===v&&styles.active]} onPress={()=>setSyringe(v)}><Text style={[styles.switchText,syringe===v&&styles.activeText]}>{v} mL</Text></Pressable>)}</View>
+      <View style={styles.volumeSummary}>
+        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'VOLUMEN':'VOLUME'}</Text><Text style={styles.metricValue}>{fmt(displayMl)} <Text style={styles.metricUnit}>mL</Text></Text></View>
+        <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'EQUIVALENTE U-100':'U-100 EQUIVALENT'}</Text><Text style={styles.metricValue}>{fmt(displayMl*100)} <Text style={styles.metricUnit}>{es?'unidades':'units'}</Text></Text></View>
+      </View>
       <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/></View>
-      <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
-      <Text style={styles.resultSub}>{fmt(displayMl)} mL {es?'calculados':'calculated'} · {fmt(displayMl*100)} {es?'unidades U-100 (solo si corresponde)':'U-100 units (only if applicable)'}</Text>
+      <View style={styles.tickRow}>{Array.from({length:11},(_,i)=><View key={i} style={styles.tick}/>)}</View>
+      <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{fmt(syringeCapacity/2)} mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
+      <Text style={styles.hint}>{es?'El equivalente en unidades solo corresponde a jeringas U-100.':'The units equivalent applies only to U-100 syringes.'}</Text>
       {displayMl>syringeCapacity&&<Text style={styles.warning}>{es?'El volumen supera la capacidad seleccionada.':'Volume exceeds selected syringe capacity.'}</Text>}
       <Text style={styles.hint}>{es?'Esquema orientativo, no una imagen de graduaciones reales. Comprueba la escala de tu jeringa.':'Illustrative bar, not actual syringe graduations. Verify the scale on your syringe.'}</Text>
     </View>}
@@ -107,6 +112,7 @@ export default function Calculator() {
   </ScrollView></>;
 }
 const styles=StyleSheet.create({
+ volumeSummary:{flexDirection:'row',gap:10,marginVertical:12},volumeMetric:{flex:1,padding:12,borderWidth:1,borderColor:theme.border,borderRadius:12,backgroundColor:'#F5F9FB'},metricLabel:{fontSize:10,fontWeight:'700',color:theme.slate,letterSpacing:0.5},metricValue:{fontSize:22,fontWeight:'800',color:theme.navy,marginTop:6},metricUnit:{fontSize:12,fontWeight:'600'},tickRow:{flexDirection:'row',justifyContent:'space-between',marginTop:5},tick:{width:1,height:9,backgroundColor:theme.slate},
  syringeTrack:{height:24,borderRadius:12,backgroundColor:'#E4EBF0',overflow:'hidden',borderWidth:1,borderColor:theme.border},syringeFill:{height:'100%',backgroundColor:theme.teal},scaleRow:{flexDirection:'row',justifyContent:'space-between'},scaleText:{color:theme.slate,fontSize:12},
  saveAction:{backgroundColor:theme.navy,padding:15,borderRadius:11,alignItems:'center'},saveActionText:{color:theme.white,fontWeight:'700'},outlineAction:{borderWidth:1,borderColor:theme.border,borderRadius:11,padding:15,alignItems:'center'},outlineActionText:{color:theme.navy,fontWeight:'700'},overlay:{flex:1,backgroundColor:'#0009',justifyContent:'center',padding:20},picker:{backgroundColor:theme.white,borderRadius:18,padding:20,gap:15},protocolChoice:{borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:14},
  presetRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:10},preset:{paddingVertical:9,paddingHorizontal:13,borderWidth:1,borderColor:theme.border,borderRadius:10},presetText:{fontWeight:'700',color:theme.navy},
