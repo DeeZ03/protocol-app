@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
@@ -11,7 +11,7 @@ import { dateKey, endDate, finalScheduledDate } from '../../src/protocolDates';
 import { Ionicons } from '@expo/vector-icons';
 import CompoundSelector from '../../src/components/CompoundSelector';
 
-type Protocol = { id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string; reminderEnabled?: boolean; endReminderEnabled?: boolean; alertMode?: 'standard' | 'prominent' };
+type Protocol = { calculation?: string; id: string; name: string; compound: string; schedule: string; createdAt: string; days?: number[]; time?: string; startDate?: string; durationWeeks?: number | null; customEndDate?: string; reminderEnabled?: boolean; endReminderEnabled?: boolean; alertMode?: 'standard' | 'prominent' };
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const validDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -23,6 +23,9 @@ const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 export default function Protocols() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{ calculation?: string }>();
+  const [pendingCalculation,setPendingCalculation] = useState('');
+  useEffect(() => { if (typeof routeParams.calculation === 'string' && routeParams.calculation.length > 0) { setEditingId(null); setName(''); setCompound(''); setSchedule(''); setDays([]); setTime(''); setStartDate(''); setDurationWeeks(null); setCustomEndDate(''); setPendingCalculation(routeParams.calculation); setEditing(true); router.setParams({calculation:undefined}); } }, [routeParams.calculation]);
   const { language, t } = useLanguage();
   const localizedDays = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, i + 1).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-GB', { weekday: 'short' }));
   const durationLabel = (weeks: number) => `${weeks} ${t(weeks === 1 ? 'protocols.week' : 'protocols.weeks')}`;
@@ -89,6 +92,7 @@ export default function Protocols() {
   }, []));
 
   const openEdit = (entry: Protocol) => {
+    setPendingCalculation(entry.calculation ?? '');
     setEditingId(entry.id);
     setName(entry.name);
     setCompound(entry.compound);
@@ -109,6 +113,7 @@ export default function Protocols() {
   const close = () => {
     setEditing(false);
     setEditingId(null);
+    setPendingCalculation('');
     setName('');
     setCompound('');
     setSchedule('');
@@ -175,6 +180,7 @@ export default function Protocols() {
       name: name.trim(),
       compound: compound.trim(),
       schedule: schedule.trim(),
+      calculation: pendingCalculation || existing?.calculation,
       days: days.slice().sort((a, b) => a - b),
       time: days.length ? time.trim() : '',
       startDate: startDate.trim(),
@@ -284,6 +290,7 @@ export default function Protocols() {
                 <Text style={styles.detailsValue}>{selectedProtocol.schedule.trim() || t('protocols.noNotes')}</Text>
               </>}
             </ScrollView>
+            {!!selectedProtocol?.calculation && <View style={styles.reminderCard}><Text style={styles.detailsLabel}>{language === 'es' ? 'Cálculo guardado' : 'Saved calculation'}</Text><Text style={styles.detailsValue}>{selectedProtocol.calculation}</Text></View>}
             <View style={styles.detailsActions}>
               <Pressable accessibilityRole="button" style={styles.detailsEdit} onPress={() => { if (selectedProtocol) openEdit(selectedProtocol); }}>
                 <Ionicons name="create-outline" size={19} color={theme.white}/><Text style={styles.saveText}>{t('protocols.edit')}</Text>
@@ -313,6 +320,7 @@ export default function Protocols() {
             </View>
             <Ionicons name="chevron-forward" size={22} color={theme.slate}/>
           </Pressable>
+          {!!pendingCalculation && <View style={styles.reminderCard}><Text style={styles.label}>{language === 'es' ? 'Cálculo guardado' : 'Saved calculation'}</Text><Text style={styles.detail}>{pendingCalculation}</Text><Pressable onPress={()=>setPendingCalculation('')}><Text style={styles.clearText}>{language === 'es' ? 'Quitar cálculo' : 'Remove calculation'}</Text></Pressable></View>}
           <Text style={styles.label}>{t('protocols.scheduledDays')}</Text>
           <View style={styles.dayRow}>
             {DAYS.map((day, index) => {
