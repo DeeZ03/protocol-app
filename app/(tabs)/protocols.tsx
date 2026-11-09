@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: theme.border, borderRadius: 10, backgroundColor: theme.white, padding: 13, fontSize: 16, color: theme.text, marginBottom: 20 },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
   pickerText: { fontSize: 16, color: theme.text },
-  clearText: { color: theme.teal, fontWeight: '700', marginTop: -12, marginBottom: 20 },
+  clearText: { color: theme.teal, fontWeight: '700', marginTop: 10, marginBottom: 0 },
   modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   modeButton: { borderWidth: 1, borderColor: theme.border, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: theme.white },
   pickerOverlay: { flex: 1, backgroundColor: '#0008', justifyContent: 'center', padding: 24 },
