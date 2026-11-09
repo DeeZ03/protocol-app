@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
+import { useScreenStyles } from '../../src/darkStyles';
 import { useLanguage } from '../../src/i18n';
 import { syncReminders, requestProtocolReminderPermission } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -21,6 +22,7 @@ const validDate = (value: string) => {
 const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 
 export default function Protocols() {
+  const styles = useScreenStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const routeParams = useLocalSearchParams<{ calculation?: string }>();
@@ -412,7 +414,7 @@ export default function Protocols() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles=StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background, paddingHorizontal: 20, paddingTop: 22 },
   headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headingText: { flex: 1 },
