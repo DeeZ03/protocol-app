@@ -143,16 +143,19 @@ export default function Health(){
         <Pressable onPress={()=>setMeasureGuide(v=>!v)} style={styles.guideButton}><Text style={styles.guideButtonText}>{measureGuide?t('health.hideGuide'):t('health.howToMeasure')+'  ›'}</Text></Pressable>{measureGuide&&<Text style={styles.diagramHint} >{hc.measureGuide}</Text>}
         <Text style={styles.diagramHint}>{t('health.copy12')}</Text>
         <View style={styles.figureRow}>{(['Front','Back'] as const).map(side=><View key={side} style={styles.figureColumn}><Text style={styles.figureLabel}>{t(side==='Front'?'health.front':'health.back')}</Text><Svg viewBox="0 0 150 300" width="100%" height={290}>
-          {/* Anatomical silhouette: filled limbs keep their edges visible in both themes. */}
-          <Path d="M75 5 C60 5 57 16 58 29 C59 40 65 47 75 47 C85 47 91 40 92 29 C93 16 90 5 75 5 Z" fill="#DCEBF2" stroke="#7294B4" strokeWidth="1.8"/>
-          <Path d="M63 44 L62 57 L88 57 L87 44" fill="#DCEBF2" stroke="#7294B4" strokeWidth="1.6"/>
-          <Path d="M42 67 C33 72 31 84 29 99 L16 159 Q12 173 16 181 Q19 188 25 184 L32 173 L43 124 L51 95 Z" fill="#C6DEE9" stroke="#7294B4" strokeWidth="2.2" strokeLinejoin="round"/>
-          <Path d="M108 67 C117 72 119 84 121 99 L134 159 Q138 173 134 181 Q131 188 125 184 L118 173 L107 124 L99 95 Z" fill="#C6DEE9" stroke="#7294B4" strokeWidth="2.2" strokeLinejoin="round"/>
+          {/* Vector illustration remains independent of the interactive measurement targets. */}
+          <Path d="M75 5 C61 5 57 16 58 29 C59 41 65 47 75 47 C85 47 91 41 92 29 C93 16 89 5 75 5 Z" fill="#E5F1F5" stroke="#86A6BE" strokeWidth="1.8"/>
+          <Path d="M63 44 L62 57 L88 57 L87 44" fill="#E5F1F5" stroke="#86A6BE" strokeWidth="1.6"/>
+          <Path d="M42 67 C32 71 30 85 28 102 L16 160 Q12 173 16 181 Q19 188 25 184 L32 174 L44 124 L52 94 Z" fill="#D1E4ED" stroke="#86A6BE" strokeWidth="2.4" strokeLinejoin="round"/>
+          <Path d="M108 67 C118 71 120 85 122 102 L134 160 Q138 173 134 181 Q131 188 125 184 L118 174 L106 124 L98 94 Z" fill="#D1E4ED" stroke="#86A6BE" strokeWidth="2.4" strokeLinejoin="round"/>
           <Path d={bodyDiagram==='female'
             ? 'M62 55 Q47 56 42 67 Q37 81 43 105 Q49 121 47 140 Q46 154 40 176 Q38 189 45 202 L105 202 Q112 189 110 176 Q104 154 103 140 Q101 121 107 105 Q113 81 108 67 Q103 56 88 55 Q75 64 62 55 Z'
             : 'M62 55 Q39 55 35 70 Q34 84 43 108 Q50 124 48 143 Q46 161 42 180 Q40 192 46 202 L104 202 Q110 192 108 180 Q104 161 102 143 Q100 124 107 108 Q116 84 115 70 Q111 55 88 55 Q75 64 62 55 Z'}
-            fill="#E8F4F8" stroke="#7294B4" strokeWidth="2" strokeLinejoin="round"/>
-          <Path d="M47 201 Q47 215 46 231 L43 271 Q42 283 51 287 L61 285 Q66 278 69 265 L74 221 L75 207 L76 221 L81 265 Q84 278 89 285 L99 287 Q108 283 107 271 L104 231 Q103 215 103 201" fill="#D5E8F0" stroke="#7294B4" strokeWidth="2" strokeLinejoin="round"/>
+            fill="#E8F4F8" stroke="#86A6BE" strokeWidth="2.1" strokeLinejoin="round"/>
+          <Path d="M47 201 Q47 215 46 231 L43 271 Q42 283 51 287 L61 285 Q66 278 69 265 L74 221 L75 207 L76 221 L81 265 Q84 278 89 285 L99 287 Q108 283 107 271 L104 231 Q103 215 103 201" fill="#D5E8F0" stroke="#86A6BE" strokeWidth="2" strokeLinejoin="round"/>
+          {/* Strong external arm contours prevent the torso from visually swallowing the limbs. */}
+          <Path d="M42 67 C32 71 30 85 28 102 L16 160 Q12 173 16 181 Q19 188 25 184 L32 174 L44 124" stroke="#B68AF5" strokeWidth="2.3" fill="none" strokeLinecap="round"/>
+          <Path d="M108 67 C118 71 120 85 122 102 L134 160 Q138 173 134 181 Q131 188 125 184 L118 174 L106 124" stroke="#B68AF5" strokeWidth="2.3" fill="none" strokeLinecap="round"/>
           <Path d="M56 101 Q75 108 94 101 M49 144 Q75 151 101 144 M46 180 Q75 188 104 180 M47 223 Q59 227 70 223 M80 223 Q91 227 103 223" stroke="#24B6C5" strokeWidth="1.6" strokeDasharray="3,4" fill="none"/>
           {side==='Back'&&<Path d="M75 63 L75 144 M54 84 Q75 107 96 84" stroke="#9CB8C9" strokeWidth="1.5" fill="none"/>}
           {(side==='Front'?[{m:'neck',x:75,y:52},{m:'chest',x:75,y:100},{m:'waist',x:75,y:146},{m:'hips',x:75,y:179},{m:'armLeft',x:27,y:119},{m:'armRight',x:123,y:119},{m:'thighLeft',x:58,y:223},{m:'thighRight',x:92,y:223},{m:'calfLeft',x:55,y:260},{m:'calfRight',x:95,y:260}]:[{m:'hips',x:75,y:186}]).map(p=><Circle key={p.m} cx={p.x} cy={p.y} r="7" fill="#27B4C4" stroke="#F7FCFF" strokeWidth="2.2"/>)}
