@@ -11,12 +11,10 @@ const colors:Record<string,string>={
  [theme.muted]:'#9AAAC1',
  [theme.border]:'#303A50',
  [theme.teal]:'#22D3EE',
- '#FFFFFF':'#151C2E',
  'white':'#151C2E',
  '#E6F7F7':'#123840',
  '#E4EBF0':'#263247',
  '#F1F7FA':'#202C3D',
- '#F7FAFC':'#090D18',
  '#B42318':'#FF7C84',
 };
 const preserveTextWhite=(key:string,value:string)=>key==='color'&&(value==='white'||value==='#FFFFFF');
