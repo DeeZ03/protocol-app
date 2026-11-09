@@ -5,6 +5,7 @@ import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../src/theme';
+import { useScreenStyles } from '../../src/darkStyles';
 import { useLanguage, type TranslationKey } from '../../src/i18n';
 import { getHealthCopy, spanishMarkerNames } from '../../src/healthCopy';
 
@@ -37,6 +38,7 @@ const titleFor=(key:Marker)=>MARKERS.find(m=>m.key===key)!;
 const BODY_MARKERS:Marker[]=['neck','chest','waist','hips','glutes','armLeft','armRight','thighLeft','thighRight','calfLeft','calfRight'];
 const isCircumference=(m:Marker)=>BODY_MARKERS.includes(m);
 export default function Health(){
+  const styles = useScreenStyles(baseStyles);
  const insets=useSafeAreaInsets();
  const {language,t}=useLanguage();
  const hc=getHealthCopy(language);
@@ -184,7 +186,7 @@ export default function Health(){
   </Modal>
  </View>;
 }
-const styles=StyleSheet.create({
+const baseStyles=StyleSheet.create({
  guideButton:{alignSelf:'flex-start',paddingVertical:8},guideButtonText:{color:theme.teal,fontSize:14,fontWeight:'800'},groupPanel:{padding:12,borderRadius:14,backgroundColor:'#EAF4F6',marginBottom:12},
  diagramCard:{backgroundColor:'white',borderRadius:16,borderWidth:1,borderColor:theme.border,padding:12,marginBottom:12},diagramSwitch:{flexDirection:'row',gap:8,marginBottom:8},diagramChoice:{flex:1,padding:11,borderRadius:10,alignItems:'center',backgroundColor:theme.background},diagramHint:{fontSize:12,color:theme.slate,lineHeight:18,marginVertical:7},figureRow:{flexDirection:'row',gap:8},figureColumn:{flex:1,position:'relative',alignItems:'center'},figureLabel:{fontSize:13,fontWeight:'700',color:theme.navy},figureHotspots:{position:'absolute',top:20,left:0,right:0,height:290},hotspot:{position:'absolute',width:30,height:30,borderRadius:15},
  topActions:{flexDirection:'row',alignItems:'center',gap:10},settingsIcon:{padding:10,borderRadius:12,backgroundColor:'white',borderWidth:1,borderColor:theme.border},settingsText:{fontSize:20,color:theme.navy},backLink:{alignSelf:'flex-start',paddingVertical:10,marginTop:12},backText:{color:theme.teal,fontSize:15,fontWeight:'800'},
