@@ -3,8 +3,11 @@ import { Stack, useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { theme } from '../src/theme';
 import { LanguageProvider } from '../src/i18n';
+import { AppearanceProvider, useAppearance } from '../src/appearance';
+import { StatusBar } from 'expo-status-bar';
 
-export default function RootLayout() {
+function AppNavigation() {
+  const {dark}=useAppearance();
   const router = useRouter();
   useEffect(() => {
     const openFromNotification = (response: Notifications.NotificationResponse) => {
@@ -20,5 +23,7 @@ export default function RootLayout() {
     }).catch(() => {});
     return () => subscription.remove();
   }, [router]);
-  return <LanguageProvider><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }} /></LanguageProvider>;
+  return <><StatusBar style={dark?'light':'dark'} backgroundColor={dark?'#090D18':theme.background}/><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: dark?'#090D18':theme.background } }} /></>;
 }
+
+export default function RootLayout(){return <AppearanceProvider><LanguageProvider><AppNavigation/></LanguageProvider></AppearanceProvider>}
