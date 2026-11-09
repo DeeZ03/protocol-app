@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, View, Pressable, Modal } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../src/theme';
 import { useLanguage } from '../src/i18n';
@@ -9,6 +10,7 @@ import { useLanguage } from '../src/i18n';
 const positive = (text: string) => { const n = Number(text.replace(',', '.')); return text.trim() !== '' && Number.isFinite(n) && n > 0 ? n : null; };
 export default function Calculator() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [pickerOpen,setPickerOpen] = useState(false);
   const [savedProtocols,setSavedProtocols] = useState<{id:string;name:string;calculation?:string}[]>([]);
   const [savingTo,setSavingTo] = useState<string|null>(null);
@@ -64,7 +66,7 @@ export default function Calculator() {
   const preciseVolume = (value: number) => value > 0 && value < 0.0001 ? '<0.0001' : fmt(value);
   const tinyVolume = displayMl !== null && displayMl > 0 && displayMl < 0.001;
   const field = (label: string,value:string,set:(s:string)=>void,unit:string) => <View style={styles.field}><Text style={styles.label}>{label} ({unit})</Text><TextInput keyboardType="decimal-pad" value={value} onChangeText={set} placeholder="0" style={styles.input} accessibilityLabel={label}/></View>;
-  return <><StatusBar style="dark" backgroundColor={theme.background}/><Stack.Screen options={{title:es?'Calculadora':'Calculator',headerStyle:{backgroundColor:theme.navy},headerTintColor:theme.white}}/><ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+  return <><StatusBar style="dark" backgroundColor={theme.background}/><Stack.Screen options={{title:es?'Calculadora':'Calculator',headerStyle:{backgroundColor:theme.navy},headerTintColor:theme.white}}/><ScrollView contentContainerStyle={[styles.page,{paddingTop:Math.max(insets.top,16)+12}]} keyboardShouldPersistTaps="handled">
     <Text style={styles.heading}>{es?'Calculadora de concentraciones':'Concentration calculator'}</Text>
     <Text style={styles.hint}>{es?'Convierte cantidades prescritas a volumen. No recomienda dosis ni frecuencia.':'Convert prescribed amounts into volume. This does not recommend doses or schedules.'}</Text>
     <View style={styles.switchRow}><Pressable style={[styles.switchButton,mode==='peptide'&&styles.active]} onPress={()=>setMode('peptide')}><Text style={[styles.switchText,mode==='peptide'&&styles.activeText]}>{es?'Péptido':'Peptide'}</Text></Pressable><Pressable style={[styles.switchButton,mode==='solution'&&styles.active]} onPress={()=>setMode('solution')}><Text style={[styles.switchText,mode==='solution'&&styles.activeText]}>{es?'Solución preparada':'Ready-mixed solution'}</Text></Pressable></View>
