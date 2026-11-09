@@ -12,6 +12,12 @@ const colors:Record<string,string>={
  [theme.border]:'#303A50',
  [theme.teal]:'#22D3EE',
  'white':'#151C2E',
+ '#F4F8FB':'#090D18',
+ '#F5F9FC':'#090D18',
+ '#F0F6FA':'#111827',
+ '#EDF5F8':'#151C2E',
+ '#F8FAFC':'#151C2E',
+ '#F2F7FA':'#151C2E',
  '#E6F7F7':'#123840',
  '#E4EBF0':'#263247',
  '#F1F7FA':'#202C3D',
@@ -23,7 +29,7 @@ function darkStyle<T>(value:T):T{
  if(value&&typeof value==='object'){
   return Object.fromEntries(Object.entries(value).map(([key,item])=>{
    if(typeof item==='string'&&!preserveTextWhite(key,item)&&(key==='color'||key==='backgroundColor'||key==='borderColor'||key==='borderBottomColor'||key==='borderTopColor'))return [key,key==='backgroundColor'&&item===theme.navy?'#2454D3':key==='borderColor'&&item===theme.navy?'#3D65E8':colors[item]??item];
-   return [key,item];
+   return [key,darkStyle(item)];
   })) as T;
  }
  return value;
