@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { useScreenStyles } from '../../src/darkStyles';
+import { useAppearance } from '../../src/appearance';
 import { useLanguage } from '../../src/i18n';
 import { syncReminders, requestProtocolReminderPermission } from '../../src/reminders';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -23,6 +24,7 @@ const STORAGE_KEY = 'protocol-app:test-protocols:v1';
 
 export default function Protocols() {
   const styles = useScreenStyles(baseStyles);
+  const {dark} = useAppearance();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const routeParams = useLocalSearchParams<{ calculation?: string }>();
@@ -235,11 +237,11 @@ export default function Protocols() {
         </Pressable>
       </View>
       <View style={styles.calculatorCard}>
-        <View style={styles.calculatorHeading}><Ionicons name="calculator-outline" size={21} color={theme.navy}/><Text style={styles.calculatorTitle}>{language === 'es' ? 'Calculadora de dosis y volumen' : 'Dose & volume calculator'}</Text></View>
+        <View style={styles.calculatorHeading}><Ionicons name="calculator-outline" size={21} color={dark?'#B38AFF':theme.navy}/><Text style={styles.calculatorTitle}>{language === 'es' ? 'Calculadora de dosis y volumen' : 'Dose & volume calculator'}</Text></View>
         <Text style={styles.calculatorHint}>{language === 'es' ? 'Calcula el volumen a partir de una cantidad prescrita.' : 'Calculate volume from a prescribed amount.'}</Text>
         <View style={styles.calculatorActions}>
-          <Pressable accessibilityRole="button" style={styles.calculatorAction} onPress={()=>router.push('/calculator?mode=peptide')}><Ionicons name="flask-outline" size={18} color={theme.navy}/><Text style={styles.calculatorActionText}>{language === 'es' ? 'Péptidos' : 'Peptides'}</Text></Pressable>
-          <Pressable accessibilityRole="button" style={styles.calculatorAction} onPress={()=>router.push('/calculator?mode=solution')}><Ionicons name="medical-outline" size={18} color={theme.navy}/><Text style={styles.calculatorActionText}>{language === 'es' ? 'Inyectables' : 'Injectables'}</Text></Pressable>
+          <Pressable accessibilityRole="button" style={styles.calculatorAction} onPress={()=>router.push('/calculator?mode=peptide')}><Ionicons name="flask-outline" size={18} color={dark?'#B38AFF':theme.navy}/><Text style={styles.calculatorActionText}>{language === 'es' ? 'Péptidos' : 'Peptides'}</Text></Pressable>
+          <Pressable accessibilityRole="button" style={styles.calculatorAction} onPress={()=>router.push('/calculator?mode=solution')}><Ionicons name="medical-outline" size={18} color={dark?'#B38AFF':theme.navy}/><Text style={styles.calculatorActionText}>{language === 'es' ? 'Inyectables' : 'Injectables'}</Text></Pressable>
         </View>
       </View>
       <View style={styles.savedHeading}><Text style={styles.savedTitle}>{language === 'es' ? 'Protocolos guardados' : 'Saved protocols'}</Text><Text style={styles.savedCount}>{items.length} {language === 'es' ? 'guardados' : 'saved'}</Text></View>
@@ -272,7 +274,7 @@ export default function Protocols() {
             <View style={styles.detailsHeader}>
               <Text style={styles.heading}>{selectedProtocol?.name}</Text>
               <Pressable accessibilityRole="button" accessibilityLabel={t('protocols.closeDetails')} onPress={() => setSelectedId(null)}>
-                <Ionicons name="close" size={26} color={theme.navy}/>
+                <Ionicons name="close" size={26} color={dark?'#B38AFF':theme.navy}/>
               </Pressable>
             </View>
             <ScrollView contentContainerStyle={styles.detailsScroll}>
@@ -357,7 +359,7 @@ export default function Protocols() {
           {durationMode !== 'indefinite' && !startDate && <Text style={styles.help}>{t('protocols.chooseStartFixed')}</Text>}
           <View style={styles.reminderCard}>
             <Pressable accessibilityRole="button" accessibilityState={{expanded: reminderSettingsOpen}} style={styles.reminderRow} onPress={() => setReminderSettingsOpen(v => !v)}>
-              <View style={styles.reminderIcon}><Ionicons name="notifications-outline" size={23} color={theme.navy}/></View>
+              <View style={styles.reminderIcon}><Ionicons name="notifications-outline" size={23} color={dark?'#B38AFF':theme.navy}/></View>
               <View style={{flex:1}}>
                 <Text style={styles.reminderTitle}>{t('protocols.setReminders')}</Text>
                 <Text style={styles.reminderHelp}>{reminderEnabled ? t('protocols.notificationOn') + (endReminderEnabled && durationMode !== 'indefinite' ? t('protocols.finalOn') : '') : t('protocols.reminderOff')}</Text>
@@ -434,7 +436,7 @@ const baseStyles=StyleSheet.create({
   card: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, backgroundColor: theme.white, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 7 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 2 },
   cardTitle: { color: theme.navy, fontWeight: '700', fontSize: 16, flexShrink: 1 },
-  detail: { color: theme.slate, fontSize: 13, lineHeight: 19, marginTop: 2 },
+  detail: { color: theme.slate, fontSize: 13, lineHeight: 19, marginTop: 2, borderWidth:0, backgroundColor:'transparent' },
   cardMeta: { color: theme.muted, fontSize: 12, marginTop: 5 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   edit: { color: theme.teal, fontWeight: '700' },
