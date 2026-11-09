@@ -1,6 +1,6 @@
 import Svg, { Circle, Line, Polyline, Ellipse, Rect, Path } from 'react-native-svg';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Keyboard } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, BackHandler, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Keyboard, Image } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -144,34 +144,30 @@ export default function Health(){
         <Pressable onPress={()=>setMeasureGuide(v=>!v)} style={styles.guideButton}><Text style={styles.guideButtonText}>{measureGuide?t('health.hideGuide'):t('health.howToMeasure')+'  ›'}</Text></Pressable>{measureGuide&&<Text style={styles.diagramHint} >{hc.measureGuide}</Text>}
         <Text style={styles.diagramHint}>{t('health.copy12')}</Text>
         <View style={styles.diagramSwitch}>{(['Front','Back'] as const).map(side=><Pressable key={side} accessibilityRole="button" accessibilityState={{selected:figureSide===side}} onPress={()=>setFigureSide(side)} style={[styles.diagramChoice,figureSide===side&&styles.selected]}><Text style={[styles.optionText,figureSide===side&&styles.selectedText]}>{t(side==='Front'?'health.front':'health.back')}</Text></Pressable>)}</View>
-        <View style={styles.figureRow}>{([figureSide] as const).map(side=><View key={side} style={styles.figureColumn}><Svg viewBox="0 0 150 300" width={195} height={390}>
-          {/* Anatomical front/back silhouette, with independent touch targets below. */}
-          <Path d="M75 6 C61 6 57 17 59 30 Q59 40 65 45 L67 52 L83 52 L85 45 Q91 40 91 30 C93 17 89 6 75 6 Z" fill="#E5F1F5" stroke="#7899AE" strokeWidth="1.7"/>
-          <Path d="M60 24 Q57 21 57 29 Q57 35 62 37 M90 24 Q93 21 93 29 Q93 35 88 37" fill="none" stroke="#7899AE" strokeWidth="1.4"/>
-          <Path d="M66 46 L65 56 Q75 62 85 56 L84 46" fill="#E5F1F5" stroke="#7899AE" strokeWidth="1.5"/>
-          {/* Arms extend naturally from the shoulder, with elbows, wrists and hands. */}
-          <Path d="M45 63 Q36 66 32 80 L26 114 Q24 125 20 137 L12 165 Q10 171 13 175 L16 176 L14 186 Q14 192 17 193 Q20 195 21 189 L23 180 L22 194 Q23 198 26 196 L29 182 L28 194 Q30 197 33 192 L35 174 Q38 167 35 158 L39 137 L49 103 Z" fill="#D9EAF1" stroke="#7899AE" strokeWidth="1.8" strokeLinejoin="round"/>
-          <Path d="M105 63 Q114 66 118 80 L124 114 Q126 125 130 137 L138 165 Q140 171 137 175 L134 176 L136 186 Q136 192 133 193 Q130 195 129 189 L127 180 L128 194 Q127 198 124 196 L121 182 L122 194 Q120 197 117 192 L115 174 Q112 167 115 158 L111 137 L101 103 Z" fill="#D9EAF1" stroke="#7899AE" strokeWidth="1.8" strokeLinejoin="round"/>
-          {/* Torso, waist, pelvis: distinct male/female anatomy. */}
-          <Path d={bodyDiagram==='female'
-            ? 'M64 55 Q56 57 46 62 Q38 67 40 81 Q43 94 48 105 Q52 115 50 127 Q45 141 42 161 Q40 179 46 197 Q57 207 75 206 Q93 207 104 197 Q110 179 108 161 Q105 141 100 127 Q98 115 102 105 Q107 94 110 81 Q112 67 104 62 Q94 57 86 55 Q75 63 64 55 Z'
-            : 'M64 55 Q55 57 42 62 Q34 67 38 83 Q42 96 49 109 Q53 123 50 137 L44 166 Q41 181 46 197 Q57 205 75 204 Q93 205 104 197 Q109 181 106 166 L100 137 Q97 123 101 109 Q108 96 112 83 Q116 67 108 62 Q95 57 86 55 Q75 63 64 55 Z'}
-            fill="#E8F4F8" stroke="#7899AE" strokeWidth="2" strokeLinejoin="round"/>
-          {/* Full-length legs and feet. */}
-          <Path d="M46 197 Q44 211 45 226 L43 245 Q40 260 43 273 L42 280 Q35 286 32 289 Q29 294 36 296 L56 296 Q62 294 62 289 L63 279 Q67 263 69 247 L74 211 L75 204 Q76 222 81 247 Q83 263 87 279 L88 289 Q88 294 94 296 L114 296 Q121 294 118 289 Q115 286 108 280 L107 273 Q110 260 107 245 L105 226 Q106 211 104 197" fill="#D9EAF1" stroke="#7899AE" strokeWidth="2" strokeLinejoin="round"/>
-          <Path d="M75 204 L75 215 M49 252 Q56 257 64 253 M86 253 Q94 257 101 252" fill="none" stroke="#A4BDCB" strokeWidth="1.3"/>
-          {side==='Front'?<>
-            <Path d="M49 91 Q60 98 75 96 Q90 98 101 91 M75 103 L75 138 M67 140 Q75 145 83 140" fill="none" stroke="#B0C8D4" strokeWidth="1.1"/>
-            {bodyDiagram==='female'&&<Path d="M48 98 Q58 109 72 103 M78 103 Q92 109 102 98" fill="none" stroke="#A4BDCB" strokeWidth="1.2"/>}
-          </>:<Path d="M75 64 L75 148 M48 87 Q59 110 75 107 Q91 110 102 87 M53 111 Q61 120 69 120 M81 120 Q89 120 97 111" fill="none" stroke="#A4BDCB" strokeWidth="1.3"/>}
-          {/* Circumference bands, rather than dots, match the measurement reference. */}
-          {side==='Front'?<>
-            <Path d="M65 52 Q75 56 85 52 M47 103 Q75 110 103 103 M47 144 Q75 151 103 144 M45 183 Q75 190 105 183 M25 111 Q31 115 40 113 M110 113 Q119 115 125 111 M45 231 Q57 235 69 231 M81 231 Q93 235 105 231 M43 260 Q54 264 65 260 M85 260 Q96 264 107 260" stroke="#24C0C6" strokeWidth="3.2" fill="none" strokeLinecap="round" opacity="0.92"/>
-          </>:<Path d="M46 187 Q75 196 104 187 M47 144 Q75 151 103 144" stroke="#24C0C6" strokeWidth="3.2" fill="none" strokeLinecap="round"/>}
-          {(side==='Front'?[{m:'neck',x:75,y:52},{m:'chest',x:75,y:103},{m:'waist',x:75,y:145},{m:'hips',x:75,y:183},{m:'armLeft',x:30,y:112},{m:'armRight',x:120,y:112},{m:'thighLeft',x:57,y:231},{m:'thighRight',x:93,y:231},{m:'calfLeft',x:54,y:260},{m:'calfRight',x:96,y:260}]:[{m:'glutes',x:75,y:187}]).map(p=><Circle key={p.m} cx={p.x} cy={p.y} r="4.5" fill="#22C1C8" stroke="#F7FCFF" strokeWidth="1.4"/>)}
-        </Svg>
-        <View style={styles.figureHotspots}>{(side==='Front'?[{m:'neck',top:'13%',left:'44%'},{m:'chest',top:'29%',left:'44%'},{m:'waist',top:'44%',left:'44%'},{m:'hips',top:'55%',left:'44%'},{m:'armLeft',top:'35%',left:'12%'},{m:'armRight',top:'35%',left:'77%'},{m:'thighLeft',top:'70%',left:'33%'},{m:'thighRight',top:'70%',left:'57%'},{m:'calfLeft',top:'82%',left:'30%'},{m:'calfRight',top:'82%',left:'61%'} ]:[{m:'glutes',top:'57%',left:'44%'}]).map(p=><Pressable key={p.m} accessibilityRole="button" accessibilityLabel={'View '+titleFor(p.m as Marker).name} onPress={()=>setDetail(p.m as Marker)} style={[styles.hotspot,{top:p.top as any,left:p.left as any}]}/>)}</View>
-        </View>)}</View>
+        <View style={styles.figureRow}>
+          <View style={styles.figureColumn}>
+            <Image
+              source={bodyDiagram==='male'
+                ? (figureSide==='Front'?require('../../male_front.png'):require('../../male_back.png'))
+                : (figureSide==='Front'?require('../../female_front.png'):require('../../female_back.png'))}
+              style={styles.bodyFigure}
+              resizeMode="contain"
+              accessibilityLabel={`${bodyDiagram} body, ${figureSide.toLowerCase()} view`}
+            />
+            <View style={styles.figureHotspots}>
+              {(figureSide==='Front'
+                ? [{m:'neck',x:75,y:52},{m:'chest',x:75,y:103},{m:'waist',x:75,y:145},{m:'hips',x:75,y:183},{m:'armLeft',x:30,y:112},{m:'armRight',x:120,y:112},{m:'thighLeft',x:57,y:231},{m:'thighRight',x:93,y:231},{m:'calfLeft',x:54,y:260},{m:'calfRight',x:96,y:260}]
+                : [{m:'glutes',x:75,y:187}]
+              ).map(p=><Pressable
+                key={p.m}
+                accessibilityRole="button"
+                accessibilityLabel={'View '+titleFor(p.m as Marker).name}
+                onPress={()=>setDetail(p.m as Marker)}
+                style={[styles.hotspot,{left:p.x/150*195-18,top:p.y/300*390-18}]}
+              />)}
+            </View>
+          </View>
+        </View>
         <Text style={styles.diagramHint}>{t('health.copy13')}</Text>
       </View>}
       {healthSection==='measurements'&&bodyGroup&&<View style={styles.groupPanel}><Pressable onPress={()=>setBodyGroup(null)}><Text style={styles.guideButtonText}>‹ {t('health.copy14')}</Text></Pressable><Text style={styles.featureTitle}>{bodyGroup}</Text>{(bodyGroup==='Arms'?['armLeft','armRight']:bodyGroup==='Thighs'?['thighLeft','thighRight']:['calfLeft','calfRight']).map(k=>{const m=k as Marker;const latest=items.filter(i=>i.marker===m).sort((a,b)=>b.date.localeCompare(a.date))[0];return <Pressable key={k} style={styles.featureRow} onPress={()=>setDetail(m)}><View style={{flex:1}}><Text style={styles.featureTitle}>{translatedName(m)}</Text><Text style={styles.featureDescription}>{latest?localizedQuantity(m,latest.value)+' '+localizedUnit(m):t('health.copy15')}</Text></View><Text style={styles.chevron}>›</Text></Pressable>})}</View>}
@@ -207,7 +203,7 @@ export default function Health(){
 }
 const baseStyles=StyleSheet.create({
  guideButton:{alignSelf:'flex-start',paddingVertical:8},guideButtonText:{color:theme.teal,fontSize:14,fontWeight:'800'},groupPanel:{padding:12,borderRadius:14,backgroundColor:'#EAF4F6',marginBottom:12},
- diagramCard:{backgroundColor:'white',borderRadius:16,borderWidth:1,borderColor:theme.border,padding:12,marginBottom:12},diagramSwitch:{flexDirection:'row',gap:8,marginBottom:8},diagramChoice:{flex:1,padding:11,borderRadius:10,alignItems:'center',backgroundColor:theme.background},diagramHint:{fontSize:12,color:theme.slate,lineHeight:18,marginVertical:7},figureRow:{flexDirection:'row',justifyContent:'center',paddingVertical:10},figureColumn:{width:195,position:'relative',alignItems:'center'},figureLabel:{fontSize:13,fontWeight:'700',color:theme.navy},figureHotspots:{position:'absolute',top:10,left:0,right:0,height:390},hotspot:{position:'absolute',width:36,height:36,borderRadius:18},
+ diagramCard:{backgroundColor:'white',borderRadius:16,borderWidth:1,borderColor:theme.border,padding:12,marginBottom:12},diagramSwitch:{flexDirection:'row',gap:8,marginBottom:8},diagramChoice:{flex:1,padding:11,borderRadius:10,alignItems:'center',backgroundColor:theme.background},diagramHint:{fontSize:12,color:theme.slate,lineHeight:18,marginVertical:7},figureRow:{flexDirection:'row',justifyContent:'center',paddingVertical:10},figureColumn:{width:195,height:390,position:'relative',alignItems:'center'},bodyFigure:{width:195,height:390},figureLabel:{fontSize:13,fontWeight:'700',color:theme.navy},figureHotspots:{position:'absolute',top:0,left:0,width:195,height:390},hotspot:{position:'absolute',width:36,height:36,borderRadius:18},
  topActions:{flexDirection:'row',alignItems:'center',gap:10},settingsIcon:{padding:10,borderRadius:12,backgroundColor:'white',borderWidth:1,borderColor:theme.border},settingsText:{fontSize:20,color:theme.navy},backLink:{alignSelf:'flex-start',paddingVertical:10,marginTop:12},backText:{color:theme.teal,fontSize:15,fontWeight:'800'},
  healthNav:{flexDirection:'row',gap:6,marginTop:18,marginBottom:20},healthNavTab:{flex:1,backgroundColor:'#E9F0F4',paddingVertical:12,paddingHorizontal:3,borderRadius:12,alignItems:'center',borderWidth:1,borderColor:theme.border},healthNavSelected:{backgroundColor:theme.navy,borderColor:theme.navy},healthNavText:{fontSize:12,fontWeight:'700',color:theme.navy},healthNavTextSelected:{color:'white'},overviewPanel:{backgroundColor:'#F0F6F8',borderRadius:16,padding:12,borderWidth:1,borderColor:theme.border},panelTitle:{fontSize:18,fontWeight:'800',color:theme.navy},panelSubtitle:{fontSize:13,color:theme.slate,marginTop:5,marginBottom:14,lineHeight:19},featureRow:{flexDirection:'row',alignItems:'center',backgroundColor:'white',borderWidth:1,borderColor:theme.border,borderRadius:14,padding:16,marginTop:12,gap:12},featureIcon:{width:40,height:40,borderRadius:10,backgroundColor:'#E2F4F3',alignItems:'center',justifyContent:'center'},featureEmoji:{fontSize:25,color:theme.teal},featureTitle:{fontSize:16,fontWeight:'800',color:theme.navy},featureDescription:{fontSize:12,color:theme.slate,lineHeight:18,marginTop:4},chevron:{fontSize:28,color:theme.slate},
  trend:{fontSize:11,color:theme.teal,marginTop:6,fontWeight:'600'},rangeRow:{flexDirection:'row',gap:6,marginVertical:12},rangeButton:{flex:1,alignItems:'center',padding:8,borderRadius:8,backgroundColor:theme.background},rangeSelected:{backgroundColor:theme.navy},rangeText:{color:theme.navy,fontSize:12,fontWeight:'700'},rangeTextSelected:{color:'white'},chartArea:{alignItems:'center'},chartMax:{color:theme.slate,fontSize:12,alignSelf:'flex-start'},chartMin:{color:theme.slate,fontSize:12,alignSelf:'flex-start'},chartDates:{flexDirection:'row',justifyContent:'space-between'},
