@@ -24,7 +24,7 @@ function darkStyle<T>(value:T):T{
  if(Array.isArray(value))return value.map(darkStyle) as T;
  if(value&&typeof value==='object'){
   return Object.fromEntries(Object.entries(value).map(([key,item])=>{
-   if(typeof item==='string'&&!preserveTextWhite(key,item)&&(key==='color'||key==='backgroundColor'||key==='borderColor'||key==='borderBottomColor'||key==='borderTopColor'))return [key,colors[item]??item];
+   if(typeof item==='string'&&!preserveTextWhite(key,item)&&(key==='color'||key==='backgroundColor'||key==='borderColor'||key==='borderBottomColor'||key==='borderTopColor'))return [key,key==='backgroundColor'&&item===theme.navy?'#2454D3':key==='borderColor'&&item===theme.navy?'#3D65E8':colors[item]??item];
    return [key,item];
   })) as T;
  }
