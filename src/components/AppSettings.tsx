@@ -16,6 +16,11 @@ export function AppSettings({ visible, onClose }: { visible: boolean; onClose: (
   const { language, setLanguage, t } = useLanguage();
   const hc = getHealthCopy(language);
   const {dark,setDark} = useAppearance();
+  const labelStyle=dark?{color:'#EDF4FF'}:undefined;
+  const hintStyle=dark?{color:'#A5B4C9'}:undefined;
+  const choiceStyle=dark?{borderColor:'#46546D',backgroundColor:'#1B263A'}:undefined;
+  const selectedStyle=dark?{backgroundColor:'#16435A',borderColor:'#22D3EE'}:undefined;
+  const choiceTextStyle=dark?{color:'#EDF4FF'}:undefined;
   const [profile, setProfile] = useState<LocalProfile>({ username: '' });
   const [weight, setWeight] = useState<'kg'|'lb'|'st'>('kg');
   const [waist, setWaist] = useState<'cm'|'in'>('cm');
@@ -48,16 +53,16 @@ export function AppSettings({ visible, onClose }: { visible: boolean; onClose: (
         <Text style={[styles.label,dark&&{color:'#F7FAFF'}]}>{t('settings.profile')}</Text>
         <View style={styles.profileRow}><Pressable accessibilityRole="button" accessibilityLabel={t('settings.changePhoto')} onPress={()=>void choosePhoto()} style={styles.avatar}>{profile.avatarUri?<Image source={{uri:profile.avatarUri}} style={styles.avatarImage}/>:<Text style={styles.avatarLetters}>{(profile.username.trim().slice(0,2)||'P').toUpperCase()}</Text>}</Pressable><View style={{flex:1}}><Text style={[styles.hint,dark&&{color:'#A5B4C9'}]}>{t('settings.changePhoto')}</Text><TextInput accessibilityLabel={t('settings.username')} placeholder={t('settings.usernamePlaceholder')} value={profile.username} onChangeText={username=>setProfile({...profile,username})} maxLength={30} autoCapitalize="none" style={[styles.usernameInput,dark&&{backgroundColor:'#1A2438',color:'#F7FAFF',borderColor:'#35435C'}]}/></View></View>
         <Pressable accessibilityRole="button" style={styles.profileSave} onPress={()=>void saveProfile({...profile,username:profile.username.trim()})}><Text style={styles.profileSaveText}>{t('settings.saveProfile')}</Text></Pressable>
-        <Text style={styles.label}>{t('health.weight')}</Text>
-        <View style={styles.row}>{(['kg','lb','st'] as const).map(unit=><Pressable key={unit} onPress={()=>void saveUnits(unit,waist)} style={[styles.choice,weight===unit&&styles.selected]}><Text style={[styles.optionText,weight===unit&&styles.selectedText]}>{unit==='st'?'st & lb':unit}</Text></Pressable>)}</View>
-        <Text style={styles.label}>{t('health.waist')}</Text>
-        <View style={styles.row}>{(['cm','in'] as const).map(unit=><Pressable key={unit} onPress={()=>void saveUnits(weight,unit)} style={[styles.choice,waist===unit&&styles.selected]}><Text style={[styles.optionText,waist===unit&&styles.selectedText]}>{unit==='in'?t('health.inches'):'cm'}</Text></Pressable>)}</View>
-        <Text style={styles.hint}>{hc.unitExplanation}</Text>
+        <Text style={[styles.label,labelStyle]}>{t('health.weight')}</Text>
+        <View style={styles.row}>{(['kg','lb','st'] as const).map(unit=><Pressable key={unit} onPress={()=>void saveUnits(unit,waist)} style={[styles.choice,choiceStyle,weight===unit&&styles.selected,weight===unit&&selectedStyle]}><Text style={[styles.optionText,choiceTextStyle,weight===unit&&styles.selectedText]}>{unit==='st'?'st & lb':unit}</Text></Pressable>)}</View>
+        <Text style={[styles.label,labelStyle]}>{t('health.waist')}</Text>
+        <View style={styles.row}>{(['cm','in'] as const).map(unit=><Pressable key={unit} onPress={()=>void saveUnits(weight,unit)} style={[styles.choice,choiceStyle,waist===unit&&styles.selected,waist===unit&&selectedStyle]}><Text style={[styles.optionText,choiceTextStyle,waist===unit&&styles.selectedText]}>{unit==='in'?t('health.inches'):'cm'}</Text></Pressable>)}</View>
+        <Text style={[styles.hint,hintStyle]}>{hc.unitExplanation}</Text>
         <Text style={[styles.label,dark&&{color:'#F7FAFF'}]}>{language==='es'?'Apariencia':'Appearance'}</Text>
-        <View style={styles.row}>{([{value:false,en:'Light',es:'Claro'},{value:true,en:'Dark',es:'Oscuro'}] as const).map(option=><Pressable key={String(option.value)} accessibilityRole="button" accessibilityState={{selected:dark===option.value}} onPress={()=>void setDark(option.value)} style={[styles.choice,dark===option.value&&styles.selected]}><Text style={[styles.optionText,dark&&{color:'#F7FAFF'},dark===option.value&&styles.selectedText]}>{language==='es'?option.es:option.en}</Text></Pressable>)}</View>
-        <Text style={styles.label}>{t('settings.language')}</Text>
-        <View style={styles.row}>{([{code:'en-GB',label:'English (UK)'},{code:'es',label:'Español'}] as const).map(option=><Pressable key={option.code} onPress={()=>void setLanguage(option.code)} style={[styles.choice,language===option.code&&styles.selected]}><Text style={[styles.optionText,language===option.code&&styles.selectedText]}>{option.label}</Text></Pressable>)}</View>
-        <Text style={styles.hint}>{t('settings.languageHint')}</Text>
+        <View style={styles.row}>{([{value:false,en:'Light',es:'Claro'},{value:true,en:'Dark',es:'Oscuro'}] as const).map(option=><Pressable key={String(option.value)} accessibilityRole="button" accessibilityState={{selected:dark===option.value}} onPress={()=>void setDark(option.value)} style={[styles.choice,choiceStyle,dark===option.value&&styles.selected,dark===option.value&&selectedStyle]}><Text style={[styles.optionText,choiceTextStyle,dark===option.value&&styles.selectedText]}>{language==='es'?option.es:option.en}</Text></Pressable>)}</View>
+        <Text style={[styles.label,labelStyle]}>{t('settings.language')}</Text>
+        <View style={styles.row}>{([{code:'en-GB',label:'English (UK)'},{code:'es',label:'Español'}] as const).map(option=><Pressable key={option.code} onPress={()=>void setLanguage(option.code)} style={[styles.choice,choiceStyle,language===option.code&&styles.selected,language===option.code&&selectedStyle]}><Text style={[styles.optionText,choiceTextStyle,language===option.code&&styles.selectedText]}>{option.label}</Text></Pressable>)}</View>
+        <Text style={[styles.hint,hintStyle]}>{t('settings.languageHint')}</Text>
       </ScrollView></View>
     </View>
   </Modal>;
