@@ -5,10 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../src/theme';
+import { useScreenStyles } from '../src/darkStyles';
 import { useLanguage } from '../src/i18n';
 
 const positive = (text: string) => { const n = Number(text.replace(',', '.')); return text.trim() !== '' && Number.isFinite(n) && n > 0 ? n : null; };
 export default function Calculator() {
+  const styles = useScreenStyles(baseStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [pickerOpen,setPickerOpen] = useState(false);
@@ -148,7 +150,7 @@ export default function Calculator() {
     <Text style={styles.footer}>{es?'Herramienta matemática, no recomendación médica. Verifica la etiqueta, la prescripción y el tipo de jeringa con un profesional sanitario.':'Mathematical tool, not medical advice. Confirm the label, prescription and syringe type with a qualified healthcare professional.'}</Text>
   </ScrollView></>;
 }
-const styles=StyleSheet.create({
+const baseStyles=StyleSheet.create({
  volumeSummary:{flexDirection:'row',gap:10,marginVertical:12},volumeMetric:{flex:1,padding:12,borderWidth:1,borderColor:theme.border,borderRadius:12,backgroundColor:'#F5F9FB'},metricLabel:{fontSize:10,fontWeight:'700',color:theme.slate,letterSpacing:0.5},metricValue:{fontSize:22,fontWeight:'800',color:theme.navy,marginTop:6},metricUnit:{fontSize:12,fontWeight:'600'},tickRow:{flexDirection:'row',justifyContent:'space-between',marginTop:5},tick:{width:1,height:9,backgroundColor:theme.slate},
  scaleHeading:{fontSize:10,fontWeight:'800',letterSpacing:0.8,color:theme.slate,marginTop:8},syringeBody:{flexDirection:'row',alignItems:'center',height:68,paddingHorizontal:2},needle:{width:19,height:2,backgroundColor:'#8195A5'},needleHub:{width:12,height:12,borderRadius:3,backgroundColor:'#8BAABD',borderWidth:1,borderColor:'#6D91A8'},barrel:{flex:1,height:40,borderWidth:2,borderColor:'#9BAFBE',borderRadius:8,backgroundColor:'#F1F7FA',overflow:'hidden',justifyContent:'center'},syringeFill:{height:'100%',backgroundColor:'#46C4D2',opacity:0.85},barrelHighlight:{position:'absolute',top:3,left:3,right:3,height:6,borderRadius:4,backgroundColor:'#FFFFFF99'},plungerSeal:{position:'absolute',width:5,top:1,bottom:1,backgroundColor:'#17334C',borderRadius:2},fingerGrip:{height:54,width:7,borderRadius:4,backgroundColor:'#8FA5B6'},plungerRod:{width:23,height:7,backgroundColor:'#A6B9C7'},plungerEnd:{width:8,height:34,borderRadius:3,backgroundColor:'#7C94A8'},graduations:{flexDirection:'row',justifyContent:'space-between',marginHorizontal:33,marginTop:-5,marginBottom:3},graduationCell:{alignItems:'center',minWidth:0},graduationLine:{height:10,width:1,backgroundColor:'#9DAEBC'},graduationMajor:{height:18,width:2,backgroundColor:'#375A75'},graduationLabel:{fontSize:10,fontWeight:'700',color:theme.navy,marginTop:4},
  saveAction:{backgroundColor:theme.navy,padding:15,borderRadius:11,alignItems:'center'},saveActionText:{color:theme.white,fontWeight:'700'},outlineAction:{borderWidth:1,borderColor:theme.border,borderRadius:11,padding:15,alignItems:'center'},outlineActionText:{color:theme.navy,fontWeight:'700'},overlay:{flex:1,backgroundColor:'#0009',justifyContent:'center',padding:20},picker:{backgroundColor:theme.white,borderRadius:18,padding:20,gap:15},protocolChoice:{borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:14},
