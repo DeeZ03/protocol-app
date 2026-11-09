@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../src/theme';
 import { useLanguage } from '../../src/i18n';
+import { useAppearance } from '../../src/appearance';
 
 const icons = {
   index: 'home-outline',
@@ -15,14 +16,17 @@ const icons = {
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
+  const {dark}=useAppearance();
   return (
     <Tabs screenOptions={({ route }) => ({
-      headerStyle: { backgroundColor: theme.navy },
-      headerTintColor: theme.white,
+      headerStyle: { backgroundColor: dark?'#111827':theme.navy },
+      headerTintColor: '#FFFFFF',
       headerTitleStyle: { fontWeight: '700' },
-      tabBarActiveTintColor: theme.teal,
-      tabBarInactiveTintColor: theme.muted,
+      tabBarActiveTintColor: dark?'#22D3EE':theme.teal,
+      tabBarInactiveTintColor: dark?'#A5B4C9':theme.muted,
       tabBarStyle: {
+        backgroundColor: dark?'#111827':'#FFFFFF',
+        borderTopColor: dark?'#303A50':theme.border,
         height: 60 + Math.max(insets.bottom, 8),
         paddingBottom: Math.max(insets.bottom, 8),
         paddingTop: 5,
