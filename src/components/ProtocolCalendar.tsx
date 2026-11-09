@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, Animated, PanResponder } from 'react-native';
 import { theme } from '../theme';
+import { useScreenStyles } from '../darkStyles';
 import { useLanguage } from '../i18n';
 import { isScheduled } from '../protocolDates';
 
@@ -14,6 +15,7 @@ const monthMove = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth()
 const scheduled = (p: Protocol, d: Date) => isScheduled(p, d);
 
 export function ProtocolCalendar({ protocols, completions }: Props) {
+  const styles = useScreenStyles(baseStyles);
   const { language, t } = useLanguage();
   const locale = language === 'es' ? 'es-ES' : 'en-GB';
   const [week, setWeek] = useState(() => weekStart(new Date()));
@@ -148,7 +150,7 @@ export function ProtocolCalendar({ protocols, completions }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   title: { fontSize: 18, fontWeight: '800', color: theme.navy },
   link: { color: theme.teal, fontWeight: '700', fontSize: 14 },
