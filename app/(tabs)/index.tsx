@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
 import { useScreenStyles } from '../../src/darkStyles';
+import { useAppearance } from '../../src/appearance';
 import { useLanguage } from '../../src/i18n';
 import { AppSettings, PROFILE_KEY, type LocalProfile } from '../../src/components/AppSettings';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
@@ -23,6 +24,7 @@ const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 
 export default function Dashboard() {
   const styles = useScreenStyles(baseStyles);
+  const {dark} = useAppearance();
   const {language,t}=useLanguage();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState<'history' | 'protocols' | null>(null);
@@ -113,7 +115,7 @@ export default function Dashboard() {
   return (
     <>
     <ScrollView contentContainerStyle={styles.page}>
-      <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel={t('settings.profile')} onPress={()=>setSettingsOpen(true)} style={styles.headerAvatar}>{profile.avatarUri?<Image source={{uri:profile.avatarUri}} style={styles.headerAvatarImage}/>:<Text style={styles.headerAvatarLetters}>{(profile.username.trim().slice(0,2)||'P').toUpperCase()}</Text>}</Pressable><Pressable accessibilityRole="button" accessibilityLabel={t('health.settings')} onPress={()=>setSettingsOpen(true)} style={{padding:10}}><Text style={{fontSize:27,fontWeight:'700',color:theme.navy}}>☰</Text></Pressable></View></View>
+      <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={styles.eyebrow}>{t('dashboard.eyebrow')}</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel={t('settings.profile')} onPress={()=>setSettingsOpen(true)} style={styles.headerAvatar}>{profile.avatarUri?<Image source={{uri:profile.avatarUri}} style={styles.headerAvatarImage}/>:<Text style={styles.headerAvatarLetters}>{(profile.username.trim().slice(0,2)||'P').toUpperCase()}</Text>}</Pressable><Pressable accessibilityRole="button" accessibilityLabel={t('health.settings')} onPress={()=>setSettingsOpen(true)} style={{padding:10}}><Text style={{fontSize:27,fontWeight:'700',color:dark?'#C4D2E9':theme.navy}}>☰</Text></Pressable></View></View>
       <Text style={styles.heading}>{t('dashboard.heading')}</Text>
       <Text style={styles.subtitle}>{t('dashboard.subtitle')}</Text>
       <View style={styles.overviewCard}>
@@ -125,7 +127,7 @@ export default function Dashboard() {
             <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{completedToday}</Text><Text style={styles.summaryLabel}>{t('dashboard.completedShort')}</Text></View>
             <View style={styles.summaryMetric}><Text style={styles.summaryNumber}>{dueToday.length-completedToday}</Text><Text style={styles.summaryLabel}>{t('dashboard.remainingShort')}</Text></View>
           </View>
-          <View style={styles.progressTrack}><View style={[styles.progressFill,{width: `${dueToday.length ? Math.min(100, completedToday / dueToday.length * 100) : 0}%` as const}]} /></View>
+          <View style={[styles.progressTrack,dark&&{backgroundColor:'#292C4A'}]}><View style={[styles.progressFill,dark&&{backgroundColor:'#9B5CF6'}],{width: `${dueToday.length ? Math.min(100, completedToday / dueToday.length * 100) : 0}%` as const}]} /></View>
           <Text style={styles.progressCaption}>{dueToday.length ? Math.round(completedToday/dueToday.length*100)+'% '+t('dashboard.completed') : t('dashboard.noneToday')}</Text>
         </>}
       </View>
