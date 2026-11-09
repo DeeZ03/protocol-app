@@ -99,13 +99,12 @@ export default function Calculator() {
     </View>}
     {displayMl !== null && displayMl > 0 && <View style={styles.card}>
       <Text style={styles.title}>{es?'Lectura visual de la jeringa':'Visual syringe reading'}</Text>
-      <Text style={styles.hint}>{es?'Selecciona la capacidad de la jeringa para comparar el volumen calculado.':'Select syringe capacity to compare the calculated volume.'}</Text>
+      <Text style={styles.hint}>{es?'Guía visual de la capacidad seleccionada; no sustituye las marcas de una jeringa real.':'Visual guide for the selected capacity; not a substitute for real syringe markings.'}</Text>
 
       <View style={styles.volumeSummary}>
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'VOLUMEN':'VOLUME'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl)} <Text style={styles.metricUnit}>mL</Text></Text></View>
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'EQUIVALENTE U-100':'U-100 EQUIVALENT'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl*100)} <Text style={styles.metricUnit}>{es?'unidades':'units'}</Text></Text></View>
       </View>
-      <Text style={styles.resultSub}>{es?'Lectura equivalente en U-100':'Equivalent U-100 reading'}: {preciseVolume(displayMl*100)} {es?'unidades':'units'}</Text>
       <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/></View>
       <View style={styles.tickRow}>{Array.from({length:11},(_,i)=><View key={i} style={styles.tick}/>)}</View>
       <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{fmt(syringeCapacity/2)} mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
