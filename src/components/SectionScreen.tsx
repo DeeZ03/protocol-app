@@ -1,9 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { theme } from '../theme';
+import { useScreenStyles } from '../darkStyles';
 
 type Props = { title: string; description: string };
 
 export function SectionScreen({ title, description }: Props) {
+  const styles=useScreenStyles(baseStyles);
   return (
     <View style={styles.page}>
       <Text style={styles.heading}>{title}</Text>
@@ -15,7 +17,7 @@ export function SectionScreen({ title, description }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   page: { flex: 1, padding: 20, backgroundColor: theme.background },
   heading: { fontSize: 26, fontWeight: '800', color: theme.navy, marginBottom: 16 },
   card: { backgroundColor: theme.white, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: theme.border },
