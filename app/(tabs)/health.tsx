@@ -163,7 +163,7 @@ export default function Health(){
                 accessibilityRole="button"
                 accessibilityLabel={'View '+titleFor(p.m as Marker).name}
                 onPress={()=>setDetail(p.m as Marker)}
-                style={[styles.hotspot,{left:p.x/150*195-18,top:p.y/300*390-18}]}
+                style={[styles.hotspot,{left:(195-390*384/1024)/2+(p.x/150)*(390*384/1024)-18,top:p.y/300*390-18}]}
               />)}
             </View>
           </View>
