@@ -48,7 +48,7 @@ export function useScreenStyles<T extends Record<string,any>>(styles:T):T{
   const converted=darkStyle(styles) as Record<string,any>;
   // Named surfaces receive consistent dark elevation and readable contrast.
   // This is deliberately scoped to dark mode; light appearance is unchanged.
-  const raised=new Set(['modalPanel','detailsSheet','detail','picker','pickerSheet']);
+  const raised=new Set(['modalPanel','detailsSheet','picker','pickerSheet']);
   const metrics=new Set(['volumeMetric']);
   const overrides:Record<string,any>={};
   for(const [name,style] of Object.entries(converted)){
