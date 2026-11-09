@@ -3,6 +3,7 @@ import { Alert, Image, Modal, ScrollView, StyleSheet, Text, View, Pressable } fr
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/theme';
+import { useScreenStyles } from '../../src/darkStyles';
 import { useLanguage } from '../../src/i18n';
 import { AppSettings, PROFILE_KEY, type LocalProfile } from '../../src/components/AppSettings';
 import { ProtocolCalendar } from '../../src/components/ProtocolCalendar';
@@ -21,6 +22,7 @@ const localDate = (date: Date) => [date.getFullYear(), String(date.getMonth() + 
 const scheduledToday = (item: Protocol, date: Date) => isScheduled(item, date);
 
 export default function Dashboard() {
+  const styles = useScreenStyles(baseStyles);
   const {language,t}=useLanguage();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState<'history' | 'protocols' | null>(null);
@@ -189,7 +191,7 @@ export default function Dashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles=StyleSheet.create({
   headerActions:{flexDirection:'row',alignItems:'center',gap:6},
   headerAvatar:{width:42,height:42,borderRadius:21,backgroundColor:theme.navy,borderWidth:2,borderColor:theme.teal,overflow:'hidden',alignItems:'center',justifyContent:'center'},
   headerAvatarImage:{width:42,height:42},headerAvatarLetters:{color:theme.white,fontWeight:'800',fontSize:15},
