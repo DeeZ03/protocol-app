@@ -36,9 +36,11 @@ export default function Calculator() {
   const syringeFraction = displayMl !== null ? Math.min(1, Math.max(0, displayMl / syringeCapacity)) : 0;
   const invalidPeptide = peptideMl !== null && d !== null && peptideMl > d;
   const validResult = mode === 'peptide' ? peptideMl !== null && !invalidPeptide : perInjection !== null;
+  const savedVolume = (value: number | null) => value === null ? '' : Number(value.toFixed(6)).toString();
+  const maxUnits = Math.round(syringeCapacity * 100);
   const summary = mode === 'peptide'
-    ? `Peptide · vial ${strength} mg · diluent ${diluent} mL · prescribed ${dose} mcg · calculated ${peptideMl !== null ? peptideMl.toPrecision(8) : ''} mL`
-    : `Ready-mixed · ${concentration} mg/mL · ${monthly} mg/month · ${frequency} administrations/month · calculated ${perInjection !== null ? perInjection.toPrecision(8) : ''} mL/administration`;
+    ? `Peptide · vial ${strength} mg · diluent ${diluent} mL · prescribed ${dose} mcg · calculated ${peptideMl !== null ? savedVolume(peptideMl) : ''} mL`
+    : `Ready-mixed · ${concentration} mg/mL · ${monthly} mg/month · ${frequency} administrations/month · calculated ${perInjection !== null ? savedVolume(perInjection) : ''} mL/administration`;
   const chooseExisting = async () => {
     try {
       const raw = await AsyncStorage.getItem('protocol-app:test-protocols:v1');
@@ -105,13 +107,30 @@ export default function Calculator() {
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'VOLUMEN':'VOLUME'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl)} <Text style={styles.metricUnit}>mL</Text></Text></View>
         <View style={styles.volumeMetric}><Text style={styles.metricLabel}>{es?'EQUIVALENTE U-100':'U-100 EQUIVALENT'}</Text><Text style={styles.metricValue}>{preciseVolume(displayMl*100)} <Text style={styles.metricUnit}>{es?'unidades':'units'}</Text></Text></View>
       </View>
-      <View style={styles.syringeTrack}><View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/></View>
-      <View style={styles.tickRow}>{Array.from({length:11},(_,i)=><View key={i} style={styles.tick}/>)}</View>
-      <View style={styles.scaleRow}><Text style={styles.scaleText}>0 mL</Text><Text style={styles.scaleText}>{fmt(syringeCapacity/2)} mL</Text><Text style={styles.scaleText}>{syringe} mL</Text></View>
+      <Text style={styles.scaleHeading}>{es?'ESCALA U-100 · CADA NÚMERO = 10 UNIDADES':'U-100 SCALE · NUMBERED EVERY 10 UNITS'}</Text>
+      <View style={styles.syringeBody}>
+        <View style={styles.needle}/>
+        <View style={styles.needleHub}/>
+        <View style={styles.barrel}>
+          <View style={[styles.syringeFill,{width:`${syringeFraction*100}%` as const}]}/>
+          <View style={styles.barrelHighlight}/>
+          <View style={[styles.plungerSeal,{left:`${syringeFraction*100}%` as const}]}/>
+        </View>
+        <View style={styles.fingerGrip}/>
+        <View style={styles.plungerRod}/>
+        <View style={styles.plungerEnd}/>
+      </View>
+      <View style={styles.graduations}>
+        {Array.from({length:maxUnits/5+1},(_,i)=>{const units=i*5;const major=units%10===0;return <View key={units} style={styles.graduationCell}>
+          <View style={[styles.graduationLine,major&&styles.graduationMajor]}/>
+          {major&&<Text style={styles.graduationLabel}>{units}</Text>}
+        </View>;})}
+      </View>
+      <Text style={styles.hint}>{es?`Capacidad: ${syringe} mL (${maxUnits} unidades U-100). El dibujo no está a escala.`:`Capacity: ${syringe} mL (${maxUnits} U-100 units). Drawing not to scale.`}</Text>
       <Text style={styles.hint}>{es?'El equivalente en unidades solo corresponde a jeringas U-100.':'The units equivalent applies only to U-100 syringes.'}</Text>
       {tinyVolume&&<Text style={styles.warning}>{es?'El volumen calculado es muy pequeño. No redondees a cero; confirma que puede medirse con precisión antes de usarlo.':'Calculated volume is very small. Do not round to zero; confirm it can be measured accurately before use.'}</Text>}
       {displayMl>syringeCapacity&&<Text style={styles.warning}>{es?'El volumen supera la capacidad seleccionada.':'Volume exceeds selected syringe capacity.'}</Text>}
-      <Text style={styles.hint}>{es?'Esquema orientativo, no una imagen de graduaciones reales. Comprueba la escala de tu jeringa.':'Illustrative bar, not actual syringe graduations. Verify the scale on your syringe.'}</Text>
+      <Text style={styles.hint}>{es?'Jeringa ilustrativa, no graduaciones reales. Comprueba la escala de tu jeringa.':'Illustrative syringe, not actual syringe graduations. Verify the scale on your syringe.'}</Text>
     </View>}
     {validResult && <View style={styles.card}>
       <Text style={styles.title}>{es?'Guardar en protocolos':'Save to protocols'}</Text>
@@ -131,7 +150,7 @@ export default function Calculator() {
 }
 const styles=StyleSheet.create({
  volumeSummary:{flexDirection:'row',gap:10,marginVertical:12},volumeMetric:{flex:1,padding:12,borderWidth:1,borderColor:theme.border,borderRadius:12,backgroundColor:'#F5F9FB'},metricLabel:{fontSize:10,fontWeight:'700',color:theme.slate,letterSpacing:0.5},metricValue:{fontSize:22,fontWeight:'800',color:theme.navy,marginTop:6},metricUnit:{fontSize:12,fontWeight:'600'},tickRow:{flexDirection:'row',justifyContent:'space-between',marginTop:5},tick:{width:1,height:9,backgroundColor:theme.slate},
- syringeTrack:{height:24,borderRadius:12,backgroundColor:'#E4EBF0',overflow:'hidden',borderWidth:1,borderColor:theme.border},syringeFill:{height:'100%',backgroundColor:theme.teal},scaleRow:{flexDirection:'row',justifyContent:'space-between'},scaleText:{color:theme.slate,fontSize:12},
+ scaleHeading:{fontSize:10,fontWeight:'800',letterSpacing:0.8,color:theme.slate,marginTop:8},syringeBody:{flexDirection:'row',alignItems:'center',height:68,paddingHorizontal:2},needle:{width:19,height:2,backgroundColor:'#8195A5'},needleHub:{width:12,height:12,borderRadius:3,backgroundColor:'#8BAABD',borderWidth:1,borderColor:'#6D91A8'},barrel:{flex:1,height:40,borderWidth:2,borderColor:'#9BAFBE',borderRadius:8,backgroundColor:'#F1F7FA',overflow:'hidden',justifyContent:'center'},syringeFill:{height:'100%',backgroundColor:'#46C4D2',opacity:0.85},barrelHighlight:{position:'absolute',top:3,left:3,right:3,height:6,borderRadius:4,backgroundColor:'#FFFFFF99'},plungerSeal:{position:'absolute',width:5,top:1,bottom:1,backgroundColor:'#17334C',borderRadius:2},fingerGrip:{height:54,width:7,borderRadius:4,backgroundColor:'#8FA5B6'},plungerRod:{width:23,height:7,backgroundColor:'#A6B9C7'},plungerEnd:{width:8,height:34,borderRadius:3,backgroundColor:'#7C94A8'},graduations:{flexDirection:'row',justifyContent:'space-between',marginHorizontal:33,marginTop:-5,marginBottom:3},graduationCell:{alignItems:'center',minWidth:0},graduationLine:{height:10,width:1,backgroundColor:'#9DAEBC'},graduationMajor:{height:18,width:2,backgroundColor:'#375A75'},graduationLabel:{fontSize:10,fontWeight:'700',color:theme.navy,marginTop:4},
  saveAction:{backgroundColor:theme.navy,padding:15,borderRadius:11,alignItems:'center'},saveActionText:{color:theme.white,fontWeight:'700'},outlineAction:{borderWidth:1,borderColor:theme.border,borderRadius:11,padding:15,alignItems:'center'},outlineActionText:{color:theme.navy,fontWeight:'700'},overlay:{flex:1,backgroundColor:'#0009',justifyContent:'center',padding:20},picker:{backgroundColor:theme.white,borderRadius:18,padding:20,gap:15},protocolChoice:{borderBottomWidth:1,borderBottomColor:theme.border,paddingVertical:14},
  presetRow:{flexDirection:'row',flexWrap:'wrap',gap:7,marginBottom:2},preset:{paddingVertical:8,paddingHorizontal:12,borderWidth:1,borderColor:theme.border,borderRadius:10},presetText:{fontWeight:'700',color:theme.navy},
  page:{padding:16,paddingBottom:36,backgroundColor:theme.background,gap:12},heading:{fontSize:26,fontWeight:'800',color:theme.navy},hint:{fontSize:13,color:theme.muted,lineHeight:20},switchRow:{flexDirection:'row',gap:8},switchButton:{flex:1,borderWidth:1,borderColor:theme.border,borderRadius:12,padding:12,alignItems:'center'},active:{backgroundColor:theme.navy,borderColor:theme.navy},switchText:{color:theme.navy,fontWeight:'700',textAlign:'center'},activeText:{color:theme.white},card:{backgroundColor:theme.white,borderRadius:16,borderWidth:1,borderColor:theme.border,padding:15,gap:10},title:{fontSize:19,fontWeight:'800',color:theme.navy},field:{gap:6},label:{color:theme.navy,fontWeight:'600',fontSize:14},input:{borderWidth:1,borderColor:theme.border,borderRadius:10,paddingVertical:9,paddingHorizontal:12,fontSize:17,color:theme.navy},result:{padding:16,backgroundColor:'#E6F7F7',borderRadius:12,gap:6},resultLabel:{color:theme.navy,fontWeight:'600'},resultValue:{color:theme.navy,fontWeight:'800',fontSize:28},resultSub:{color:theme.navy,fontWeight:'700'},warning:{color:'#B42318',fontWeight:'700'},footer:{fontSize:12,color:theme.muted,lineHeight:19}
