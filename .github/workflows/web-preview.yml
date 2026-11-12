@@ -43,6 +43,40 @@ jobs:
       - name: Export browser preview
         run: EXPO_BASE_URL=/protocol-app npx expo export --platform web --output-dir dist
 
+      - name: Add browser startup diagnostics
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          page = Path('dist/index.html')
+          html = page.read_text()
+          script = """<script>
+          (function () {
+            function show(message) {
+              if (document.getElementById('protocol-preview-error')) return;
+              var panel = document.createElement('pre');
+              panel.id = 'protocol-preview-error';
+              panel.style.cssText = 'position:fixed;inset:12px;z-index:999999;background:#fff;color:#9b1c1c;padding:16px;white-space:pre-wrap;overflow:auto;font:13px monospace;border:2px solid #d33';
+              panel.textContent = 'Protocol browser preview error:\\n' + message;
+              document.body.appendChild(panel);
+            }
+            window.addEventListener('error', function (e) {
+              show(e.message + '\\n' + (e.filename || '') + ':' + (e.lineno || ''));
+            });
+            window.addEventListener('unhandledrejection', function (e) {
+              show(String(e.reason && (e.reason.stack || e.reason.message) || e.reason));
+            });
+            window.addEventListener('load', function () {
+              setTimeout(function () {
+                var root = document.getElementById('root');
+                if (root && !root.children.length) show('App root is empty after loading. Check JavaScript asset paths or startup errors.');
+              }, 5000);
+            });
+          })();
+          </script>"""
+          html = html.replace('<head>', '<head>' + script, 1)
+          page.write_text(html)
+          PY
+
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v5
 
