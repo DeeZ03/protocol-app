@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import { theme } from '../src/theme';
 import { LanguageProvider } from '../src/i18n';
 import { AppearanceProvider, useAppearance } from '../src/appearance';
@@ -10,6 +10,8 @@ function AppNavigation() {
   const {dark}=useAppearance();
   const router = useRouter();
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const Notifications = require('expo-notifications') as typeof import('expo-notifications');
     const openFromNotification = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data;
       if (data?.screen !== 'dashboard') return;
