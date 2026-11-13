@@ -155,12 +155,6 @@ export default function Health(){
               accessibilityLabel={`${bodyDiagram} body, ${figureSide.toLowerCase()} view`}
             />
             <View style={styles.figureHotspots}>
-              <Svg width="100%" height="100%" viewBox="0 0 384 1024" pointerEvents="none">
-                {(figureSide==='Front'
-                  ? [{m:'neck',x:192,y:166,rx:38,ry:12},{m:'chest',x:192,y:280,rx:111,ry:18},{m:'waist',x:192,y:406,rx:80,ry:16},{m:'hips',x:192,y:502,rx:104,ry:19},{m:'armLeft',x:69,y:310,rx:28,ry:12},{m:'armRight',x:315,y:310,rx:28,ry:12},{m:'thighLeft',x:148,y:655,rx:42,ry:14},{m:'thighRight',x:236,y:655,rx:42,ry:14},{m:'calfLeft',x:147,y:840,rx:30,ry:12},{m:'calfRight',x:237,y:840,rx:30,ry:12}]
-                  : [{m:'glutes',x:192,y:518,rx:100,ry:22}]
-                ).map(p=><Ellipse key={p.m} cx={p.x} cy={p.y} rx={p.rx} ry={p.ry} fill="none" stroke="#23D5DF" strokeWidth="7" opacity={0.95}/>)}
-              </Svg>
               {(figureSide==='Front'
                 ? [{m:'neck',x:192,y:166},{m:'chest',x:192,y:280},{m:'waist',x:192,y:406},{m:'hips',x:192,y:502},{m:'armLeft',x:69,y:310},{m:'armRight',x:315,y:310},{m:'thighLeft',x:148,y:655},{m:'thighRight',x:236,y:655},{m:'calfLeft',x:147,y:840},{m:'calfRight',x:237,y:840}]
                 : [{m:'glutes',x:192,y:518}]
@@ -168,9 +162,10 @@ export default function Health(){
                 key={p.m}
                 accessibilityRole="button"
                 accessibilityLabel={'View '+titleFor(p.m as Marker).name}
+                accessibilityHint="Open measurement details"
                 onPress={()=>setDetail(p.m as Marker)}
-                style={[styles.hotspot,{left:p.x/384*(390*384/1024)-18,top:p.y/1024*390-18}]}
-              />)}
+                style={[styles.hotspot,{left:p.x/384*(520*384/1024)-16,top:p.y/1024*520-16}]}
+              ><View style={styles.measurementDot}/></Pressable>)}
             </View>
           </View>
         </View>
@@ -209,7 +204,7 @@ export default function Health(){
 }
 const baseStyles=StyleSheet.create({
  guideButton:{alignSelf:'flex-start',paddingVertical:8},guideButtonText:{color:theme.teal,fontSize:14,fontWeight:'800'},groupPanel:{padding:12,borderRadius:14,backgroundColor:'#EAF4F6',marginBottom:12},
- diagramCard:{backgroundColor:'white',borderRadius:16,borderWidth:1,borderColor:theme.border,padding:12,marginBottom:12},diagramSwitch:{flexDirection:'row',gap:8,marginBottom:8},diagramChoice:{flex:1,padding:11,borderRadius:10,alignItems:'center',backgroundColor:theme.background},diagramHint:{fontSize:12,color:theme.slate,lineHeight:18,marginVertical:7},figureRow:{flexDirection:'row',justifyContent:'center',paddingVertical:10},figureColumn:{width:195,height:390,position:'relative',alignItems:'center'},bodyFigure:{width:195,height:390},figureLabel:{fontSize:13,fontWeight:'700',color:theme.navy},figureHotspots:{position:'absolute',top:0,left:(195-390*384/1024)/2,width:390*384/1024,height:390},hotspot:{position:'absolute',width:36,height:36,borderRadius:18},
+ diagramCard:{backgroundColor:'white',borderRadius:16,borderWidth:1,borderColor:theme.border,padding:12,marginBottom:12},diagramSwitch:{flexDirection:'row',gap:8,marginBottom:8},diagramChoice:{flex:1,padding:11,borderRadius:10,alignItems:'center',backgroundColor:theme.background},diagramHint:{fontSize:12,color:theme.slate,lineHeight:18,marginVertical:7},figureRow:{flexDirection:'row',justifyContent:'center',paddingVertical:10},figureColumn:{width:260,height:520,position:'relative',alignItems:'center'},bodyFigure:{width:260,height:520},figureLabel:{fontSize:13,fontWeight:'700',color:theme.navy},figureHotspots:{position:'absolute',top:0,left:(260-520*384/1024)/2,width:520*384/1024,height:520},hotspot:{position:'absolute',width:32,height:32,borderRadius:16,alignItems:'center',justifyContent:'center'},measurementDot:{width:15,height:15,borderRadius:8,backgroundColor:'#23D5DF',borderWidth:2,borderColor:'#FFFFFF'},
  topActions:{flexDirection:'row',alignItems:'center',gap:10},settingsIcon:{padding:10,borderRadius:12,backgroundColor:'white',borderWidth:1,borderColor:theme.border},settingsText:{fontSize:20,color:theme.navy},backLink:{alignSelf:'flex-start',paddingVertical:10,marginTop:12},backText:{color:theme.teal,fontSize:15,fontWeight:'800'},
  healthNav:{flexDirection:'row',gap:6,marginTop:18,marginBottom:20},healthNavTab:{flex:1,backgroundColor:'#E9F0F4',paddingVertical:12,paddingHorizontal:3,borderRadius:12,alignItems:'center',borderWidth:1,borderColor:theme.border},healthNavSelected:{backgroundColor:theme.navy,borderColor:theme.navy},healthNavText:{fontSize:12,fontWeight:'700',color:theme.navy},healthNavTextSelected:{color:'white'},overviewPanel:{backgroundColor:'#F0F6F8',borderRadius:16,padding:12,borderWidth:1,borderColor:theme.border},panelTitle:{fontSize:18,fontWeight:'800',color:theme.navy},panelSubtitle:{fontSize:13,color:theme.slate,marginTop:5,marginBottom:14,lineHeight:19},featureRow:{flexDirection:'row',alignItems:'center',backgroundColor:'white',borderWidth:1,borderColor:theme.border,borderRadius:14,padding:16,marginTop:12,gap:12},featureIcon:{width:40,height:40,borderRadius:10,backgroundColor:'#E2F4F3',alignItems:'center',justifyContent:'center'},featureEmoji:{fontSize:25,color:theme.teal},featureTitle:{fontSize:16,fontWeight:'800',color:theme.navy},featureDescription:{fontSize:12,color:theme.slate,lineHeight:18,marginTop:4},chevron:{fontSize:28,color:theme.slate},
  trend:{fontSize:11,color:theme.teal,marginTop:6,fontWeight:'600'},rangeRow:{flexDirection:'row',gap:6,marginVertical:12},rangeButton:{flex:1,alignItems:'center',padding:8,borderRadius:8,backgroundColor:theme.background},rangeSelected:{backgroundColor:theme.navy},rangeText:{color:theme.navy,fontSize:12,fontWeight:'700'},rangeTextSelected:{color:'white'},chartArea:{alignItems:'center'},chartMax:{color:theme.slate,fontSize:12,alignSelf:'flex-start'},chartMin:{color:theme.slate,fontSize:12,alignSelf:'flex-start'},chartDates:{flexDirection:'row',justifyContent:'space-between'},
