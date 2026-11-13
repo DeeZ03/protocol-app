@@ -12,7 +12,7 @@ function AppNavigation() {
   useEffect(() => {
     if (Platform.OS === 'web') return;
     const Notifications = require('expo-notifications') as typeof import('expo-notifications');
-    const openFromNotification = (response: Notifications.NotificationResponse) => {
+    const openFromNotification = (response: import('expo-notifications').NotificationResponse) => {
       const data = response.notification.request.content.data;
       if (data?.screen !== 'dashboard') return;
       const protocolId = typeof data.protocolId === 'string' ? data.protocolId : '';
